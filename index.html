@@ -1,0 +1,1125 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Kenzo Metgy">
+<meta name="description" content="Classeur d'informatique : representation de l'information et systemes d'exploitation.">
+<style>
+:root{color-scheme:light dark}
+html,body{margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;font-size:14px;background:#fff}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>Classeur d'informatique</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+/* ============ tokens ============ */
+:root{
+  --paper:#F5F6F9;
+  --surface:#FFFFFF;
+  --surface-2:#EDF0F6;
+  --ink:#161E33;
+  --ink-soft:#5A6481;
+  --rule:#DCE0EA;
+  --rule-strong:#C2C9D8;
+  --blue:#26469F;      --blue-ink:#26469F;      --blue-soft:#E7ECFA;
+  --teal:#0E6B60;      --teal-ink:#0E6B60;      --teal-soft:#E0EFEC;
+  --red:#B33128;       --red-soft:#FAEAE7;
+  --shadow:0 1px 2px rgba(22,30,51,.06), 0 8px 24px -16px rgba(22,30,51,.28);
+  --grid:rgba(38,70,159,.09);
+  /* le terminal reste sombre dans les deux thèmes */
+  --term-bg:#121A1D; --term-fg:#D5E2DE; --term-dim:#7B8C87;
+  --term-prompt:#5FCBA4; --term-out:#A9BDB8; --term-warn:#E8897C;
+  --accent:var(--blue); --accent-ink:var(--blue-ink); --accent-soft:var(--blue-soft);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#111621;
+    --surface:#171E2C;
+    --surface-2:#1D2536;
+    --ink:#E3E8F3;
+    --ink-soft:#98A2BA;
+    --rule:#2A3348;
+    --rule-strong:#3A4560;
+    --blue:#8FA9F3;    --blue-ink:#A8BCF7;      --blue-soft:#1B2540;
+    --teal:#4EBFAF;    --teal-ink:#63CDBC;      --teal-soft:#14322F;
+    --red:#E89184;     --red-soft:#33211F;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+    --grid:rgba(143,169,243,.12);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#111621;
+  --surface:#171E2C;
+  --surface-2:#1D2536;
+  --ink:#E3E8F3;
+  --ink-soft:#98A2BA;
+  --rule:#2A3348;
+  --rule-strong:#3A4560;
+  --blue:#8FA9F3;    --blue-ink:#A8BCF7;      --blue-soft:#1B2540;
+  --teal:#4EBFAF;    --teal-ink:#63CDBC;      --teal-soft:#14322F;
+  --red:#E89184;     --red-soft:#33211F;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  --grid:rgba(143,169,243,.12);
+}
+.c-info{--accent:var(--blue);--accent-ink:var(--blue-ink);--accent-soft:var(--blue-soft)}
+.c-os{--accent:var(--teal);--accent-ink:var(--teal-ink);--accent-soft:var(--teal-soft)}
+
+*{box-sizing:border-box}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:"IBM Plex Sans","Segoe UI",Helvetica,Arial,sans-serif;
+  font-size:16px;line-height:1.62;-webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:"Zilla Slab",Georgia,serif;text-wrap:balance;margin:0;line-height:1.18}
+p{margin:0}
+a{color:var(--accent-ink)}
+code,.mono{font-family:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;font-variant-numeric:tabular-nums}
+
+/* ============ barre de navigation ============ */
+.topbar{
+  position:sticky;top:0;z-index:30;background:var(--surface);
+  border-bottom:1px solid var(--rule);
+}
+.topbar-inner{
+  max-width:1180px;margin:0 auto;padding:0 28px;
+  display:flex;align-items:center;gap:22px;min-height:56px;flex-wrap:wrap;
+}
+.brand{
+  font-family:"Zilla Slab",serif;font-weight:700;font-size:15px;letter-spacing:-.01em;
+  padding-right:22px;border-right:1px solid var(--rule);white-space:nowrap;
+}
+.brand span{color:var(--ink-soft);font-weight:500;font-family:"IBM Plex Sans",sans-serif;font-size:12.5px;margin-left:8px}
+@media (max-width:700px){.brand span{display:none}.brand{border-right:none;padding-right:0}}
+.tabs{display:flex;gap:4px;flex:1;min-width:0}
+.tab{
+  appearance:none;border:0;background:none;cursor:pointer;
+  font-family:"IBM Plex Sans",sans-serif;font-size:14px;color:var(--ink-soft);
+  padding:16px 2px;margin-right:18px;border-bottom:2px solid transparent;
+  display:flex;align-items:center;gap:9px;white-space:nowrap;
+}
+.tab .dot{width:7px;height:7px;border-radius:50%;background:var(--rule-strong)}
+.tab-info{--tabc:var(--blue-ink)}
+.tab-os{--tabc:var(--teal-ink)}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--tabc);border-bottom-color:var(--tabc);font-weight:600}
+.tab[aria-selected="true"] .dot{background:var(--tabc)}
+.tab:focus-visible{outline:2px solid var(--ink);outline-offset:-4px;border-radius:2px}
+@media (max-width:700px){.tabs{order:3;width:100%;overflow-x:auto}.tab{padding:10px 2px}}
+
+.gsearch{position:relative;flex:0 0 auto;width:250px}
+@media (max-width:700px){.gsearch{flex:1;width:auto;min-width:150px}}
+.gsearch input{
+  width:100%;font-family:"IBM Plex Sans",sans-serif;font-size:13.5px;padding:7px 10px 7px 30px;
+  border:1px solid var(--rule-strong);border-radius:3px;background:var(--paper);color:var(--ink);
+}
+.gsearch input:focus-visible{outline:2px solid var(--ink);outline-offset:-1px}
+.gsearch .icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--ink-soft);font-size:13px;pointer-events:none;line-height:1}
+.gsearch kbd{
+  position:absolute;right:9px;top:50%;transform:translateY(-50%);font-family:"IBM Plex Mono",monospace;
+  font-size:11px;color:var(--ink-soft);border:1px solid var(--rule);border-radius:2px;padding:0 4px;pointer-events:none;
+}
+.results{
+  position:absolute;top:calc(100% + 6px);right:0;width:min(420px,88vw);max-height:60vh;overflow:auto;
+  background:var(--surface);border:1px solid var(--rule-strong);border-radius:4px;box-shadow:var(--shadow);
+  padding:6px;z-index:40;
+}
+.results button{
+  display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;width:100%;text-align:left;
+  background:none;border:0;cursor:pointer;padding:8px 10px;border-radius:3px;color:var(--ink);
+  font-family:"IBM Plex Sans",sans-serif;font-size:14px;
+}
+.results button:hover,.results button.on{background:var(--surface-2)}
+.results .lab .k{font-family:"IBM Plex Mono",monospace;font-size:13px}
+.results .lab .sub{display:block;font-size:12px;color:var(--ink-soft);margin-top:1px}
+.results .badge{font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;padding:2px 7px;border-radius:2px;white-space:nowrap}
+.results .badge.info{background:var(--blue-soft);color:var(--blue-ink)}
+.results .badge.os{background:var(--teal-soft);color:var(--teal-ink)}
+.results .none{padding:12px 10px;font-size:13.5px;color:var(--ink-soft)}
+
+/* ============ masthead ============ */
+.masthead{
+  border-bottom:1px solid var(--rule);
+  background:
+    repeating-linear-gradient(to right, var(--grid) 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(to bottom, var(--grid) 0 1px, transparent 1px 28px),
+    var(--surface);
+}
+.c-os .masthead{background:var(--surface)}
+.masthead-inner{max-width:1180px;margin:0 auto;padding:40px 28px 32px;display:flex;flex-direction:column;gap:15px}
+.eyebrow{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;color:var(--accent-ink)}
+.masthead h1{font-size:clamp(32px,5.5vw,54px);font-weight:700;letter-spacing:-.015em}
+.lede{max-width:62ch;color:var(--ink-soft);font-size:17px}
+.meta{display:flex;flex-wrap:wrap;gap:8px 22px;align-items:center;font-size:12.5px;color:var(--ink-soft);border-top:1px solid var(--rule);padding-top:14px;margin-top:4px}
+.meta .mono{color:var(--ink)}
+
+/* ============ shell ============ */
+.shell{max-width:1180px;margin:0 auto;padding:0 28px 90px;display:grid;grid-template-columns:236px minmax(0,1fr);gap:56px;align-items:start}
+@media (max-width:900px){.shell{grid-template-columns:1fr;gap:24px;padding-bottom:60px}}
+nav.toc{position:sticky;top:56px;padding:34px 0;max-height:calc(100vh - 56px);overflow:auto}
+@media (max-width:900px){nav.toc{position:static;max-height:none;padding:22px 0 0}}
+nav.toc .toc-label{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;color:var(--ink-soft);margin-bottom:14px}
+nav.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+nav.toc a{
+  display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:baseline;text-decoration:none;
+  color:var(--ink-soft);font-size:14px;padding:6px 8px 6px 12px;border-left:2px solid transparent;
+  transition:color .15s,border-color .15s;
+}
+nav.toc a .num{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--rule-strong)}
+nav.toc a:hover{color:var(--ink)}
+nav.toc a.active{color:var(--accent-ink);border-left-color:var(--accent);font-weight:500}
+nav.toc a.active .num{color:var(--accent-ink)}
+nav.toc a:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:2px}
+.toc-switch{margin-top:26px;padding-top:18px;border-top:1px solid var(--rule)}
+.toc-switch .toc-label{margin-bottom:10px}
+.toc-switch button{
+  appearance:none;cursor:pointer;width:100%;text-align:left;background:var(--surface);
+  border:1px solid var(--rule);border-radius:3px;padding:10px 12px;color:var(--ink);
+  font-family:"IBM Plex Sans",sans-serif;font-size:13.5px;display:flex;flex-direction:column;gap:2px;
+}
+.toc-switch button:hover{border-color:var(--rule-strong)}
+.toc-switch button .s{font-size:11.5px;color:var(--ink-soft)}
+.toc-switch button:focus-visible{outline:2px solid var(--ink);outline-offset:1px}
+
+main{padding:34px 0 0;min-width:0}
+section{scroll-margin-top:76px}
+section + section{margin-top:54px}
+.sec-head{display:flex;align-items:baseline;gap:14px;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:24px}
+.sec-head .num{font-family:"IBM Plex Mono",monospace;font-size:13px;color:var(--accent-ink);font-weight:500;letter-spacing:.05em}
+.sec-head h2{font-size:clamp(22px,3.2vw,29px);font-weight:600;letter-spacing:-.01em}
+h3{font-size:19px;font-weight:600;margin:32px 0 12px}
+h4{font-size:15.5px;font-weight:600;margin:22px 0 8px;font-family:"IBM Plex Sans",sans-serif}
+.body{display:flex;flex-direction:column;gap:14px;max-width:68ch}
+.body p{max-width:68ch}
+@keyframes flash{from{background:var(--accent-soft)}to{background:transparent}}
+.flash{animation:flash 1.4s ease-out}
+@media (prefers-reduced-motion:reduce){.flash{animation:none}}
+
+/* ============ définitions ============ */
+.def{border-left:2px solid var(--accent);padding:2px 0 2px 16px;max-width:68ch}
+.def dt{font-family:"Zilla Slab",serif;font-weight:600;font-size:17px;color:var(--accent-ink)}
+.def dd{margin:2px 0 0}
+.deflist{display:flex;flex-direction:column;gap:18px;margin:0}
+
+/* ============ encadrés ============ */
+.note{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:16px 18px;max-width:68ch;display:flex;flex-direction:column;gap:8px}
+.note.plan{background:var(--accent-soft);border-color:transparent}
+.note.plan ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+.note.warn{border-left:2px solid var(--red);background:var(--red-soft)}
+.note .title{font-family:"Zilla Slab",serif;font-weight:600;font-size:16px}
+.note.warn .title{color:var(--red)}
+.tag{display:inline-block;font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;padding:2px 7px;border-radius:2px;background:var(--surface-2);color:var(--ink-soft);vertical-align:2px}
+.tag.fix{background:var(--red-soft);color:var(--red)}
+.tag.add{background:var(--accent-soft);color:var(--accent-ink)}
+
+/* ============ exemples ============ */
+.ex{border:1px solid var(--rule);border-radius:3px;background:var(--surface);box-shadow:var(--shadow);overflow:hidden;max-width:68ch}
+.ex-head{font-size:11.5px;letter-spacing:.13em;text-transform:uppercase;font-weight:600;color:var(--ink-soft);padding:10px 18px;border-bottom:1px solid var(--rule);background:var(--surface-2);display:flex;justify-content:space-between;gap:12px;align-items:center}
+.ex-body{padding:16px 18px;overflow-x:auto}
+.ex-body .mono{font-size:14px;white-space:pre;display:block;line-height:1.85}
+.res{color:var(--accent-ink);font-weight:600}
+.bad{color:var(--red);font-weight:600}
+
+/* ============ étapes ============ */
+ol.steps{counter-reset:s;list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;max-width:68ch}
+ol.steps li{counter-increment:s;display:grid;grid-template-columns:24px 1fr;gap:12px;align-items:baseline}
+ol.steps li::before{content:counter(s);font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:600;color:var(--accent-ink);background:var(--accent-soft);border-radius:2px;text-align:center;padding:2px 0}
+
+/* ============ tableaux ============ */
+.tw{overflow-x:auto;max-width:100%;border:1px solid var(--rule);border-radius:3px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:7px 14px;text-align:left;border-bottom:1px solid var(--rule);vertical-align:top}
+thead th{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;background:var(--surface-2);white-space:nowrap}
+tbody tr:last-child td{border-bottom:none}
+td.mono,th.mono{font-variant-numeric:tabular-nums}
+.compact td,.compact th{padding:5px 12px}
+
+/* ============ bases ============ */
+.bases{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+.base-card{border:1px solid var(--rule);border-radius:3px;background:var(--surface);padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.base-card h4{margin:0;font-family:"Zilla Slab",serif;font-size:17px}
+.base-card .b{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--accent-ink);font-weight:600}
+.base-card .set{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--ink-soft);word-break:break-word}
+.base-card .ext{font-family:"IBM Plex Mono",monospace;font-size:12.5px;border-top:1px dashed var(--rule);padding-top:8px;margin-top:auto}
+
+/* ============ bits ============ */
+.strip{display:flex;gap:4px;overflow-x:auto;padding:4px 0 2px}
+.bitcell{min-width:60px;flex:1;text-align:center;border:1px solid var(--rule);border-radius:2px;background:var(--surface);padding:8px 4px;display:flex;flex-direction:column;gap:3px}
+.bitcell .w{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--ink-soft)}
+.bitcell .b{font-family:"IBM Plex Mono",monospace;font-size:22px;font-weight:600;line-height:1.1}
+.bitcell .v{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--accent-ink);font-variant-numeric:tabular-nums}
+.bitcell.off{background:var(--surface-2)}
+.bitcell.off .b,.bitcell.off .v{color:var(--ink-soft);font-weight:400}
+.strip-legend{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-soft);margin-top:6px;gap:12px}
+
+/* ============ convertisseur ============ */
+.conv{border:1px solid var(--rule-strong);border-radius:3px;background:var(--surface);padding:18px;display:flex;flex-direction:column;gap:14px;max-width:68ch}
+.conv-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--ink-soft)}
+.conv input,.conv select{font-family:"IBM Plex Mono",monospace;font-size:15px;padding:8px 10px;border:1px solid var(--rule-strong);border-radius:2px;background:var(--paper);color:var(--ink)}
+.conv input{width:200px}
+.conv input:focus-visible,.conv select:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.out{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.out div{border-top:2px solid var(--rule);padding-top:8px;display:flex;flex-direction:column;gap:2px}
+.out .k{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);font-weight:600}
+.out .v{font-family:"IBM Plex Mono",monospace;font-size:17px;font-weight:500;word-break:break-all}
+.conv .msg{font-size:13px;color:var(--ink-soft);min-height:1.4em}
+.conv .msg.warn{color:var(--red)}
+
+/* ============ citations ============ */
+.quotes{display:flex;flex-direction:column;gap:18px;max-width:68ch}
+blockquote{margin:0;padding:0 0 0 20px;border-left:2px solid var(--red);font-family:"Zilla Slab",serif;font-size:19px;line-height:1.45}
+blockquote .gloss{display:block;font-family:"IBM Plex Sans",sans-serif;font-size:13.5px;color:var(--ink-soft);margin-top:8px;line-height:1.6}
+
+/* ============ commandes ============ */
+.cmds{display:flex;flex-direction:column;max-width:68ch;border-top:1px solid var(--rule)}
+.cmd{display:grid;grid-template-columns:minmax(140px,190px) 1fr;gap:18px;padding:11px 0;border-bottom:1px solid var(--rule);align-items:baseline}
+@media (max-width:620px){.cmd{grid-template-columns:1fr;gap:4px}}
+.cmd .c{font-family:"IBM Plex Mono",monospace;font-size:13.5px;font-weight:500;color:var(--accent-ink);word-break:break-word}
+.cmd .d{font-size:15px}
+.cmd .d em{color:var(--ink-soft);font-style:normal}
+.cmd.danger .c{color:var(--red)}
+
+/* ============ terminal ============ */
+.term{background:var(--term-bg);border-radius:4px;overflow:hidden;max-width:68ch;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.06)}
+.term-bar{display:flex;align-items:center;gap:7px;padding:9px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.term-bar .dot{width:9px;height:9px;border-radius:50%;background:#3A4A4E}
+.term-bar .t{margin-left:8px;font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--term-dim);letter-spacing:.04em}
+.term pre{margin:0;padding:16px;overflow-x:auto;font-family:"IBM Plex Mono",monospace;font-size:13px;line-height:1.75;color:var(--term-out)}
+.term .p{color:var(--term-prompt)}
+.term .cm{color:var(--term-fg);font-weight:500}
+.term .hash{color:var(--term-dim)}
+.term .w{color:var(--term-warn)}
+
+/* ============ arborescence ============ */
+.tree{background:var(--surface);border:1px solid var(--rule);border-radius:3px;padding:16px 18px;max-width:68ch;overflow-x:auto}
+.tree pre{margin:0;font-family:"IBM Plex Mono",monospace;font-size:13px;line-height:1.8;color:var(--ink)}
+.tree .root{color:var(--accent-ink);font-weight:700}
+.tree .cmt{color:var(--ink-soft)}
+
+/* ============ aide-mémoire ============ */
+.search{display:flex;flex-direction:column;gap:6px;max-width:340px;margin-bottom:16px}
+.search label{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:var(--ink-soft)}
+.search input{font-family:"IBM Plex Mono",monospace;font-size:14px;padding:9px 11px;border:1px solid var(--rule-strong);border-radius:2px;background:var(--surface);color:var(--ink)}
+.search input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+#recap tbody td:first-child{font-family:"IBM Plex Mono",monospace;font-size:13.5px;white-space:nowrap;color:var(--accent-ink)}
+#recap tbody tr[data-danger] td:first-child{color:var(--red)}
+.cat{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);white-space:nowrap}
+.empty{padding:16px;font-size:14px;color:var(--ink-soft)}
+
+footer{max-width:1180px;margin:0 auto;padding:26px 28px;border-top:1px solid var(--rule);font-size:12.5px;color:var(--ink-soft);display:flex;flex-wrap:wrap;gap:6px 20px}
+sup.fix{color:var(--red);font-family:"IBM Plex Mono",monospace;font-size:11px;font-weight:600}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">Classeur<span>Kenzo Metgy · 2026</span></div>
+    <div class="tabs" role="tablist" aria-label="Cours">
+      <button class="tab tab-info" id="tab-info" role="tab" aria-selected="true" aria-controls="pane-info" data-pane="info"><span class="dot"></span>Représentation de l'information</button>
+      <button class="tab tab-os" id="tab-os" role="tab" aria-selected="false" aria-controls="pane-os" data-pane="os"><span class="dot"></span>Systèmes d'exploitation</button>
+    </div>
+    <div class="gsearch">
+      <span class="icon" aria-hidden="true">⌕</span>
+      <input id="gq" type="search" placeholder="Chercher dans les deux cours…" autocomplete="off" spellcheck="false" aria-label="Chercher dans les deux cours" aria-expanded="false" aria-controls="gres">
+      <kbd>/</kbd>
+      <div class="results" id="gres" role="listbox" hidden></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= COURS 1 ================= -->
+<div class="course c-info" id="pane-info" role="tabpanel" aria-labelledby="tab-info">
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="eyebrow">Cours 01 &middot; Informatique</div>
+    <h1>Représentation de l'information</h1>
+    <p class="lede">Comment une connaissance qui fait du sens pour un humain devient une suite de 0 et de 1 dans une machine&nbsp;: systèmes de numération, méthodes de conversion, nombres fractionnaires et entiers non signés.</p>
+    <div class="meta">
+      <span>Mercredi 9 septembre 2026</span>
+      <span><span class="mono">6</span> chapitres</span>
+      <span><span class="mono">4</span> méthodes de conversion</span>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="toc" aria-label="Sommaire du cours Représentation de l'information">
+    <div class="toc-label">Sommaire</div>
+    <ol>
+      <li><a href="#i-sens"><span class="num">01</span><span>Du sens à la donnée</span></a></li>
+      <li><a href="#i-binaire"><span class="num">02</span><span>La représentation binaire</span></a></li>
+      <li><a href="#i-numeration"><span class="num">03</span><span>Les systèmes de numération</span></a></li>
+      <li><a href="#i-conversion"><span class="num">04</span><span>Conversion entre bases</span></a></li>
+      <li><a href="#i-fractionnaire"><span class="num">05</span><span>Nombres fractionnaires</span></a></li>
+      <li><a href="#i-entiers"><span class="num">06</span><span>Les entiers non signés</span></a></li>
+      <li><a href="#i-citations"><span class="num">—</span><span>Citations &amp; clins d'œil</span></a></li>
+      <li><a href="#i-relecture"><span class="num">—</span><span>Notes de relecture</span></a></li>
+    </ol>
+    <div class="toc-switch">
+      <div class="toc-label">Cours suivant</div>
+      <button type="button" data-goto="os">Systèmes d'exploitation<span class="s">Linux en ligne de commande</span></button>
+    </div>
+  </nav>
+
+  <main>
+    <section id="i-sens">
+      <div class="sec-head"><span class="num">01</span><h2>Du sens à la donnée</h2></div>
+      <dl class="deflist">
+        <div class="def">
+          <dt>Information</dt>
+          <dd>Connaissance qui fait du sens pour les personnes concernées et qui peut être représentée par des symboles.</dd>
+        </div>
+        <div class="def">
+          <dt>Le rôle de l'ordinateur</dt>
+          <dd>La notion de <em>sens</em> n'est pas pertinente pour un ordinateur. Machine purement matérielle, il agit uniquement sur la <strong>représentation</strong> de l'information. Un traitement informatique consiste donc à transformer ces représentations.</dd>
+        </div>
+        <div class="def">
+          <dt>Donnée</dt>
+          <dd>Pour simplifier l'expression «&nbsp;représentation d'information&nbsp;», on utilise le terme équivalent de <strong>donnée</strong>. Dans un ordinateur, une donnée est toujours une succession de caractères 0 et 1.</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section id="i-binaire">
+      <div class="sec-head"><span class="num">02</span><h2>La représentation binaire</h2></div>
+      <div class="body">
+        <p><strong>Information dans une machine&nbsp;:</strong> le principe adopté est celui du «&nbsp;tout ou rien&nbsp;» — électronique <em>numérique</em> ou <em>digitale</em>, par opposition à l'électronique analogique.</p>
+        <p>Symboles 1 ou 0 = <strong>1 bit</strong> <sup class="fix">✱</sup> <em>(Binary digiT)</em>.</p>
+      </div>
+      <dl class="deflist" style="margin-top:24px">
+        <div class="def">
+          <dt>Bit <span style="font-weight:400;font-size:14px;color:var(--ink-soft)">— binary digit, chiffre binaire</span></dt>
+          <dd>Unité minimale d'information&nbsp;: deux valeurs possibles, 0 ou 1. On parle alors de <strong>représentation binaire</strong>.</dd>
+        </div>
+        <div class="def">
+          <dt>Octet</dt>
+          <dd>Regroupement de 8 bits — un mot de 8 bits, comme <code>10110011</code>.</dd>
+        </div>
+      </dl>
+      <div class="note" style="margin-top:24px">
+        <p><strong>Complexité.</strong> Un bit seul a peu d'intérêt&nbsp;: il faut combiner une multitude de bits, regroupés en ensembles, pour représenter une information complexe.</p>
+      </div>
+    </section>
+
+    <section id="i-numeration">
+      <div class="sec-head"><span class="num">03</span><h2>Les principaux systèmes de numération</h2></div>
+
+      <div class="note plan">
+        <div class="eyebrow">Plan du chapitre</div>
+        <ol>
+          <li>Écriture d'un nombre dans une base quelconque</li>
+          <li>Les systèmes de numération utilisés en informatique</li>
+          <li>Conversions entre bases</li>
+        </ol>
+      </div>
+
+      <h3>Écriture d'un nombre dans une base quelconque</h3>
+      <dl class="deflist">
+        <div class="def">
+          <dt>Système de numération</dt>
+          <dd>Ensemble composé d'un nombre <strong>B</strong> (la base) et d'un ensemble ordonné <span class="mono">C = {a, b, c, d, …}</span> de cardinal B (les chiffres).</dd>
+        </div>
+        <div class="def">
+          <dt>Écriture d'un nombre</dt>
+          <dd>Représentation sous la forme d'une suite de chiffres&nbsp;: <span class="mono">X = x<sub>n</sub> x<sub>n−1</sub> … x<sub>1</sub> x<sub>0</sub></span></dd>
+        </div>
+      </dl>
+
+      <h4>Poids des chiffres</h4>
+      <div class="tw" style="max-width:68ch">
+        <table>
+          <thead><tr><th>Chiffre</th><th>Sigle</th><th>Position</th></tr></thead>
+          <tbody>
+            <tr><td>Chiffre de poids fort</td><td class="mono">MSB / MSD <span style="color:var(--ink-soft)">(Most Significant Bit / Digit)</span></td><td>Le plus à gauche</td></tr>
+            <tr><td>Chiffre de poids faible</td><td class="mono">LSB / LSD <span style="color:var(--ink-soft)">(Least Significant Bit / Digit)</span></td><td>Le plus à droite</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Les systèmes utilisés en informatique</h3>
+      <div class="bases">
+        <div class="base-card">
+          <h4>Système décimal</h4>
+          <span class="b">Base B = 10</span>
+          <span class="set">C = {0,1,2,3,4,5,6,7,8,9}</span>
+        </div>
+        <div class="base-card">
+          <h4>Système binaire</h4>
+          <span class="b">Base B = 2</span>
+          <span class="set">C = {0, 1} — appelés «&nbsp;bits&nbsp;»</span>
+          <span class="ext">(1011)<sub>2</sub> = 1·2³ + 0·2² + 1·2¹ + 1·2⁰ = <span class="res">11</span></span>
+        </div>
+        <div class="base-card">
+          <h4>Système octal</h4>
+          <span class="b">Base B = 8</span>
+          <span class="set">C = {0,1,2,3,4,5,6,7}</span>
+          <span class="ext">(5071)<sub>8</sub> = 5·8³ + 0·8² + 7·8¹ + 1·8⁰ = <span class="res">2617</span></span>
+        </div>
+        <div class="base-card">
+          <h4>Système hexadécimal</h4>
+          <span class="b">Base B = 16</span>
+          <span class="set">C = {0…9, A, B, C, D, E, F}</span>
+          <span class="ext">(A7C5)<sub>16</sub> = 10·16³ + 7·16² + 12·16¹ + 5·16⁰ = <span class="res">42949</span></span>
+        </div>
+      </div>
+      <p style="font-size:13px;color:var(--ink-soft);margin-top:10px">Tous les résultats ci-dessus sont exprimés dans la base 10.</p>
+
+      <h3>Convertisseur <span class="tag add">complément</span></h3>
+      <div class="conv">
+        <div class="conv-row">
+          <div class="field">
+            <label for="cv-in">Nombre</label>
+            <input id="cv-in" value="235" spellcheck="false" autocomplete="off">
+          </div>
+          <div class="field">
+            <label for="cv-base">Base de départ</label>
+            <select id="cv-base">
+              <option value="10" selected>10 — décimal</option>
+              <option value="2">2 — binaire</option>
+              <option value="8">8 — octal</option>
+              <option value="16">16 — hexadécimal</option>
+            </select>
+          </div>
+        </div>
+        <div class="out">
+          <div><span class="k">Binaire</span><span class="v" id="cv-2">11101011</span></div>
+          <div><span class="k">Octal</span><span class="v" id="cv-8">353</span></div>
+          <div><span class="k">Décimal</span><span class="v" id="cv-10">235</span></div>
+          <div><span class="k">Hexadécimal</span><span class="v" id="cv-16">EB</span></div>
+        </div>
+        <p class="msg" id="cv-msg">Tient sur 1 octet (8 bits)&nbsp;: 11101011.</p>
+      </div>
+    </section>
+
+    <section id="i-conversion">
+      <div class="sec-head"><span class="num">04</span><h2>Conversion entre bases</h2></div>
+
+      <h3>1<sup>re</sup> méthode — calcul par le polynôme</h3>
+      <div class="body">
+        <p><strong>Principe&nbsp;:</strong> calcul de l'expression <span class="mono">Σ (chiffre × B<sup>position</sup>)</span>. Les calculs sont effectués dans la base de destination B′.</p>
+      </div>
+      <div class="ex" style="margin-top:14px">
+        <div class="ex-head"><span>Exemple 1 — binaire vers décimal</span><span class="mono">X = (11101011)₂</span></div>
+        <div class="ex-body">
+          <span class="mono">X = 1·2⁷ + 1·2⁶ + 1·2⁵ + 0·2⁴ + 1·2³ + 0·2² + 1·2¹ + 1·2⁰
+X = 128 + 64 + 32 +  0  +  8  +  0  +  2  +  1
+X = <span class="res">(235)₁₀</span></span>
+        </div>
+      </div>
+
+      <div style="margin-top:18px;max-width:68ch">
+        <div class="strip" role="img" aria-label="Poids des huit bits du nombre 11101011">
+          <div class="bitcell"><span class="w">2⁷</span><span class="b">1</span><span class="v">128</span></div>
+          <div class="bitcell"><span class="w">2⁶</span><span class="b">1</span><span class="v">64</span></div>
+          <div class="bitcell"><span class="w">2⁵</span><span class="b">1</span><span class="v">32</span></div>
+          <div class="bitcell off"><span class="w">2⁴</span><span class="b">0</span><span class="v">0</span></div>
+          <div class="bitcell"><span class="w">2³</span><span class="b">1</span><span class="v">8</span></div>
+          <div class="bitcell off"><span class="w">2²</span><span class="b">0</span><span class="v">0</span></div>
+          <div class="bitcell"><span class="w">2¹</span><span class="b">1</span><span class="v">2</span></div>
+          <div class="bitcell"><span class="w">2⁰</span><span class="b">1</span><span class="v">1</span></div>
+        </div>
+        <div class="strip-legend"><span>← poids fort (MSB)</span><span>poids faible (LSB) →</span></div>
+      </div>
+
+      <h3>2<sup>e</sup> méthode — divisions successives</h3>
+      <div class="body">
+        <p><strong>Principe&nbsp;:</strong> on divise le nombre par la base d'arrivée B′ de manière successive jusqu'à obtenir un quotient nul. Les calculs sont effectués dans la base de départ B. Le résultat s'obtient en lisant les <strong>restes successifs de bas en haut</strong> (du dernier reste au premier).</p>
+      </div>
+      <div class="ex" style="margin-top:14px">
+        <div class="ex-head"><span>Exemple 2 — décimal vers binaire</span><span class="mono">X = (235)₁₀</span></div>
+        <div class="ex-body">
+          <span class="mono">235 / 2 = 117   reste 1   ← chiffre de poids faible
+117 / 2 =  58   reste 1     ↑
+ 58 / 2 =  29   reste 0     │
+ 29 / 2 =  14   reste 1     │  lecture
+ 14 / 2 =   7   reste 0     │  de bas
+  7 / 2 =   3   reste 1     │  en haut
+  3 / 2 =   1   reste 1     │
+  1 / 2 =   0   reste 1   ← chiffre de poids fort
+
+Résultat : (235)₁₀ = <span class="res">(11101011)₂</span></span>
+        </div>
+      </div>
+
+      <h3>3<sup>e</sup> méthode — soustractions successives</h3>
+      <div class="body">
+        <p>Par une table de puissances de 2 — cas particulier <strong>décimal → binaire</strong>.</p>
+      </div>
+      <ol class="steps" style="margin-top:14px">
+        <li>Précalculer une table des puissances de 2.</li>
+        <li>Considérer le nombre X.</li>
+        <li>Dans la table, rechercher la plus grande puissance de 2 (notée 2<sup>i</sup>) inférieure ou égale au nombre X.</li>
+        <li>Placer un bit «&nbsp;1&nbsp;» à la position i (mémoriser i).</li>
+        <li>Soustraire cette puissance 2<sup>i</sup> au nombre X&nbsp;: <span class="mono">X ← X − 2<sup>i</sup></span>.</li>
+        <li>Si le résultat de la soustraction est différent de 0, recommencer à partir de l'étape 3. Sinon, compléter les positions restantes non sélectionnées par des «&nbsp;0&nbsp;».</li>
+      </ol>
+      <div style="margin-top:18px;max-width:68ch">
+        <div class="ex-head" style="border:1px solid var(--rule);border-bottom:none;border-radius:3px 3px 0 0"><span>Table des puissances de 2</span><span class="tag add">complément</span></div>
+        <div class="tw" style="border-radius:0 0 3px 3px">
+          <table class="compact">
+            <thead><tr><th class="mono">2ⁿ</th><th class="mono">2⁰</th><th class="mono">2¹</th><th class="mono">2²</th><th class="mono">2³</th><th class="mono">2⁴</th><th class="mono">2⁵</th><th class="mono">2⁶</th><th class="mono">2⁷</th><th class="mono">2⁸</th><th class="mono">2⁹</th><th class="mono">2¹⁰</th></tr></thead>
+            <tbody><tr><td>Valeur</td><td class="mono">1</td><td class="mono">2</td><td class="mono">4</td><td class="mono">8</td><td class="mono">16</td><td class="mono">32</td><td class="mono">64</td><td class="mono">128</td><td class="mono">256</td><td class="mono">512</td><td class="mono">1024</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <h3>4<sup>e</sup> méthode — cas particuliers B = B′ⁿ</h3>
+      <div class="body">
+        <p><strong>Principe&nbsp;:</strong> codage et décodage en utilisant une <strong>table de codes</strong>, correspondance directe entre les chiffres.</p>
+      </div>
+      <div class="tw" style="max-width:68ch;margin-top:14px">
+        <table>
+          <thead><tr><th>Cas</th><th>Correspondance</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">B = B′ⁿ</td><td>Un (1) chiffre dans la base de départ B correspond à un nombre de <strong>n chiffres</strong> dans la base d'arrivée B′.</td></tr>
+            <tr><td class="mono">Bⁿ = B′</td><td>Un nombre de <strong>n chiffres</strong> dans la base de départ B correspond à un (1) chiffre dans la base d'arrivée B′.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:18px;max-width:68ch">
+        <div class="ex-head" style="border:1px solid var(--rule);border-bottom:none;border-radius:3px 3px 0 0"><span>Table de codes hexadécimal ↔ binaire</span><span class="tag add">complément</span></div>
+        <div class="tw" style="border-radius:0 0 3px 3px">
+          <table class="compact">
+            <thead><tr><th class="mono">Hex</th><th class="mono">Bin (4 bits)</th><th class="mono">Déc</th><th class="mono">Hex</th><th class="mono">Bin (4 bits)</th><th class="mono">Déc</th></tr></thead>
+            <tbody>
+              <tr><td class="mono">0</td><td class="mono">0000</td><td class="mono">0</td><td class="mono">8</td><td class="mono">1000</td><td class="mono">8</td></tr>
+              <tr><td class="mono">1</td><td class="mono">0001</td><td class="mono">1</td><td class="mono">9</td><td class="mono">1001</td><td class="mono">9</td></tr>
+              <tr><td class="mono">2</td><td class="mono">0010</td><td class="mono">2</td><td class="mono">A</td><td class="mono">1010</td><td class="mono">10</td></tr>
+              <tr><td class="mono">3</td><td class="mono">0011</td><td class="mono">3</td><td class="mono">B</td><td class="mono">1011</td><td class="mono">11</td></tr>
+              <tr><td class="mono">4</td><td class="mono">0100</td><td class="mono">4</td><td class="mono">C</td><td class="mono">1100</td><td class="mono">12</td></tr>
+              <tr><td class="mono">5</td><td class="mono">0101</td><td class="mono">5</td><td class="mono">D</td><td class="mono">1101</td><td class="mono">13</td></tr>
+              <tr><td class="mono">6</td><td class="mono">0110</td><td class="mono">6</td><td class="mono">E</td><td class="mono">1110</td><td class="mono">14</td></tr>
+              <tr><td class="mono">7</td><td class="mono">0111</td><td class="mono">7</td><td class="mono">F</td><td class="mono">1111</td><td class="mono">15</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p style="font-size:13px;color:var(--ink-soft);margin-top:10px">16 = 2⁴&nbsp;: un chiffre hexadécimal ↔ 4 bits. 8 = 2³&nbsp;: un chiffre octal ↔ 3 bits. Exemple&nbsp;: <span class="mono">(1110 1011)₂ = (EB)₁₆</span>.</p>
+      </div>
+    </section>
+
+    <section id="i-fractionnaire">
+      <div class="sec-head"><span class="num">05</span><h2>Complément — les nombres fractionnaires</h2></div>
+      <div class="body">
+        <p><strong>Principe de base&nbsp;:</strong> trouver la représentation de la partie fractionnaire d'un nombre (les chiffres après la virgule). Si le chiffre C est placé n emplacements après la virgule dans la base B, il est interprété par le calcul <span class="mono">C × B<sup>−n</sup></span>.</p>
+      </div>
+      <h4>Algorithme de conversion — multiplications successives</h4>
+      <ol class="steps">
+        <li>Dans la base B, procéder par multiplications successives de la partie fractionnaire par la base d'arrivée B′.</li>
+        <li>Lors de la i-ème multiplication, la partie entière du résultat obtenu donne le chiffre à l'indice i après la virgule.</li>
+        <li>Si la partie fractionnaire restante est différente de 0, recommencer le processus avec celle-ci.</li>
+      </ol>
+    </section>
+
+    <section id="i-entiers">
+      <div class="sec-head"><span class="num">06</span><h2>Les entiers non signés</h2></div>
+      <div class="body">
+        <p>Un bit isolé a peu d'intérêt&nbsp;: on regroupe un ensemble de bits, ce qui suppose de <strong>définir un format d'écriture</strong> — l'écriture binaire complétée à gauche par des 0.</p>
+      </div>
+
+      <h4>Capacité de représentation</h4>
+      <div class="tw" style="max-width:68ch">
+        <table>
+          <thead><tr><th>Format</th><th class="mono">Intervalle</th><th class="mono">Valeur max</th></tr></thead>
+          <tbody>
+            <tr><td>Sur n bits</td><td class="mono">[0 ; 2ⁿ − 1]</td><td class="mono">2ⁿ − 1</td></tr>
+            <tr><td>Sur 1 octet (8 bits)</td><td class="mono">[0 ; 255]</td><td class="mono">255</td></tr>
+            <tr><td>Sur 4 octets (32 bits)</td><td class="mono">[0 ; 2³² − 1]</td><td class="mono">≈ 4·10⁹</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Opérations arithmétiques</h4>
+      <div class="body">
+        <p>On utilise les algorithmes classiques pour effectuer les opérations arithmétiques de base. <strong>Attention au résultat&nbsp;:</strong> il peut être erroné en cas de <strong>dépassement de la capacité de représentation</strong>.</p>
+      </div>
+
+      <div class="ex" style="margin-top:14px">
+        <div class="ex-head"><span>Cas correct — 147 + 74 sur un octet <span class="tag fix">corrigé</span></span><span class="mono">= 221</span></div>
+        <div class="ex-body">
+          <span class="mono">  10010011   (147)
++ 01001010   ( 74)
+──────────
+  11011101   → vérification en base 10 : <span class="res">221</span> ✓</span>
+        </div>
+      </div>
+
+      <div class="ex" style="margin-top:14px">
+        <div class="ex-head"><span>Cas de dépassement — 147 + 200 sur un octet</span><span class="mono">= 91 ✗</span></div>
+        <div class="ex-body">
+          <span class="mono">  10010011   (147)
++ 11001000   (200)
+──────────
+1 01011011   ← 9 bits : le bit de poids fort est perdu
+  01011011   → lu en base 10 : <span class="bad">91</span>  au lieu de 347
+
+Dépassement de capacité : 347 > 255, le résultat ne tient pas sur un octet.</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="i-citations">
+      <div class="sec-head"><span class="num">—</span><h2>Citations &amp; clins d'œil</h2></div>
+      <div class="quotes">
+        <blockquote>
+          «&nbsp;Il y a 10 sortes de personnes&nbsp;: celles qui comprennent le binaire et les autres.&nbsp;»
+          <span class="gloss">(10)₂ = 2.</span>
+        </blockquote>
+        <blockquote>
+          «&nbsp;If only dead persons can understand hexadecimal, how many persons understand hexadecimal?&nbsp;»
+          <span class="gloss">(DEAD)₁₆ = 57 005.</span>
+        </blockquote>
+      </div>
+    </section>
+
+    <section id="i-relecture">
+      <div class="sec-head"><span class="num">—</span><h2>Notes de relecture</h2></div>
+      <div class="body">
+        <p style="color:var(--ink-soft);font-size:14px">Contenu repris intégralement des notes d'origine. Deux points ont été rectifiés et trois tableaux d'appui ajoutés, tous signalés dans la page.</p>
+      </div>
+      <div class="tw" style="max-width:68ch;margin-top:14px">
+        <table>
+          <thead><tr><th>Chapitre</th><th>Note d'origine</th><th>Correction</th></tr></thead>
+          <tbody>
+            <tr><td>02 · Représentation binaire</td><td class="mono">« Symboles 1 ou 0 = 0 bit »</td><td>= <strong>1 bit</strong> (un symbole binaire vaut un bit)</td></tr>
+            <tr><td>06 · Entiers non signés</td><td class="mono">« 174 + 74 »</td><td><strong>147 + 74</strong> — les opérandes écrits <span class="mono">10010011</span> et <span class="mono">01001010</span> valent 147 et 74, et leur somme 221 correspond bien à la vérification notée</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:13px;color:var(--ink-soft);margin-top:14px;max-width:68ch">Ajouts signalés <span class="tag add">complément</span>&nbsp;: le convertisseur de bases, la table des puissances de 2 (étape 1 de la 3<sup>e</sup> méthode) et la table de codes hexadécimal ↔ binaire (support de la 4<sup>e</sup> méthode).</p>
+    </section>
+  </main>
+</div>
+</div>
+
+<!-- ================= COURS 2 ================= -->
+<div class="course c-os" id="pane-os" role="tabpanel" aria-labelledby="tab-os" hidden>
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="eyebrow">Cours 02 &middot; Informatique</div>
+    <h1>Systèmes d'exploitation</h1>
+    <p class="lede">Prise en main de Linux en ligne de commande&nbsp;: l'arborescence de fichiers, les commandes de base pour se déplacer, créer, lire et supprimer, et la composition de commandes avec les tubes.</p>
+    <div class="meta">
+      <span>Lundi 7 septembre 2026</span>
+      <span><span class="mono">8</span> chapitres</span>
+      <span><span class="mono">30+</span> commandes</span>
+    </div>
+  </div>
+</header>
+
+<div class="shell">
+  <nav class="toc" aria-label="Sommaire du cours Systèmes d'exploitation">
+    <div class="toc-label">Sommaire</div>
+    <ol>
+      <li><a href="#o-os"><span class="num">01</span><span>Le système d'exploitation</span></a></li>
+      <li><a href="#o-arbo"><span class="num">02</span><span>L'arborescence</span></a></li>
+      <li><a href="#o-deplacer"><span class="num">03</span><span>Se repérer et se déplacer</span></a></li>
+      <li><a href="#o-creer"><span class="num">04</span><span>Créer fichiers et répertoires</span></a></li>
+      <li><a href="#o-lire"><span class="num">05</span><span>Lire un fichier</span></a></li>
+      <li><a href="#o-gerer"><span class="num">06</span><span>Copier, déplacer, supprimer</span></a></li>
+      <li><a href="#o-aide"><span class="num">07</span><span>Obtenir de l'aide</span></a></li>
+      <li><a href="#o-composer"><span class="num">08</span><span>Composer des commandes</span></a></li>
+      <li><a href="#o-recap"><span class="num">—</span><span>Aide-mémoire</span></a></li>
+      <li><a href="#o-relecture"><span class="num">—</span><span>Notes de relecture</span></a></li>
+    </ol>
+    <div class="toc-switch">
+      <div class="toc-label">Cours précédent</div>
+      <button type="button" data-goto="info">Représentation de l'information<span class="s">Bases, conversions, entiers</span></button>
+    </div>
+  </nav>
+
+  <main>
+    <section id="o-os">
+      <div class="sec-head"><span class="num">01</span><h2>Le système d'exploitation</h2></div>
+      <div class="body">
+        <p>Le <strong>système d'exploitation</strong> sert à faire fonctionner notre PC&nbsp;: Windows, Linux, macOS, iOS, Android.</p>
+        <p>Objectif du cours&nbsp;: la <strong>ligne de commande</strong>, pour manipuler Linux.</p>
+      </div>
+      <div class="term" style="margin-top:18px">
+        <div class="term-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="t">bash</span></div>
+<pre><span class="p">$</span> <span class="cm">echo bonjour</span>
+bonjour        <span class="hash"># echo répète ce que j'écris</span></pre>
+      </div>
+    </section>
+
+    <section id="o-arbo">
+      <div class="sec-head"><span class="num">02</span><h2>L'arborescence de fichiers</h2></div>
+      <div class="body">
+        <p>Les fichiers sont rangés dans des répertoires, eux-mêmes rangés dans d'autres répertoires&nbsp;: c'est l'<strong>arborescence</strong>. Elle part d'un point unique, la racine.</p>
+      </div>
+      <div class="tree" style="margin-top:16px">
+<pre><span class="root">/</span>                     <span class="cmt">← la racine</span>
+├── home
+│   └── kenzo         <span class="cmt">← répertoire courant «&nbsp;.&nbsp;»</span>
+│       ├── cours
+│       └── notes.txt
+├── etc
+└── var</pre>
+      </div>
+      <div class="cmds" style="margin-top:22px">
+        <div class="cmd"><span class="c">/</span><span class="d">La racine de l'arborescence.</span></div>
+        <div class="cmd"><span class="c">.</span><span class="d">Le répertoire courant — «&nbsp;moi&nbsp;».</span></div>
+        <div class="cmd"><span class="c">..</span><span class="d">Le répertoire père. D'où <span class="mono">cd ..</span> pour remonter d'un cran.</span></div>
+      </div>
+    </section>
+
+    <section id="o-deplacer">
+      <div class="sec-head"><span class="num">03</span><h2>Se repérer et se déplacer</h2></div>
+      <div class="cmds">
+        <div class="cmd"><span class="c">pwd</span><span class="d">Affiche l'emplacement courant dans l'arborescence.</span></div>
+        <div class="cmd"><span class="c">ls</span><span class="d">Liste tous les fichiers du répertoire.</span></div>
+        <div class="cmd"><span class="c">ls -l</span><span class="d">Liste les fichiers avec plus d'informations&nbsp;: les lignes qui commencent par <span class="mono">d</span> sont des dossiers, celles qui commencent par <span class="mono">-</span> sont des fichiers.</span></div>
+        <div class="cmd"><span class="c">ls -a</span><span class="d">Affiche aussi les fichiers cachés&nbsp;: tous les fichiers dont le nom commence par un <span class="mono">.</span> ne s'affichent pas par défaut.</span></div>
+        <div class="cmd"><span class="c">cd</span><span class="d">Change de répertoire.</span></div>
+        <div class="cmd"><span class="c">file</span><span class="d">Détermine le type d'un fichier.</span></div>
+      </div>
+      <div class="term" style="margin-top:20px">
+        <div class="term-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="t">ls -l — lecture de la première colonne <span class="tag add" style="vertical-align:0">complément</span></span></div>
+<pre><span class="p">$</span> <span class="cm">pwd</span>
+/home/kenzo
+<span class="p">$</span> <span class="cm">ls -l</span>
+<span class="w">d</span>rwxr-xr-x  2 kenzo kenzo  4096  7 sept. 15:54 cours     <span class="hash"># d → répertoire</span>
+<span class="w">-</span>rw-r--r--  1 kenzo kenzo   128  7 sept. 15:56 notes.txt <span class="hash"># - → fichier</span></pre>
+      </div>
+    </section>
+
+    <section id="o-creer">
+      <div class="sec-head"><span class="num">04</span><h2>Créer des fichiers et des répertoires</h2></div>
+      <div class="cmds">
+        <div class="cmd"><span class="c">mkdir</span><span class="d">Crée un répertoire.</span></div>
+        <div class="cmd"><span class="c">touch</span><span class="d">Crée un fichier (vide).</span></div>
+        <div class="cmd"><span class="c">nano</span><span class="d">Édite un fichier dans un éditeur de texte.</span></div>
+      </div>
+      <p style="margin-top:18px;max-width:68ch">Trois façons de créer un fichier&nbsp;: <strong>touch</strong>, une <strong>redirection</strong>, ou un <strong>éditeur de texte</strong>.</p>
+      <h3>Les redirections</h3>
+      <div class="cmds">
+        <div class="cmd"><span class="c">commande &gt; fichier.txt</span><span class="d">Écrit dans le fichier le texte affiché par la commande — le contenu précédent est <strong>écrasé</strong>. <sup class="fix">✱</sup></span></div>
+        <div class="cmd"><span class="c">commande &gt;&gt; fichier.txt</span><span class="d">Ajoute le texte affiché à la fin du fichier, sans rien effacer.</span></div>
+      </div>
+      <div class="term" style="margin-top:20px">
+        <div class="term-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="t">redirections</span></div>
+<pre><span class="p">$</span> <span class="cm">echo bonjour &gt; notes.txt</span>   <span class="hash"># crée (ou écrase) notes.txt</span>
+<span class="p">$</span> <span class="cm">echo au revoir &gt;&gt; notes.txt</span> <span class="hash"># ajoute une ligne à la fin</span>
+<span class="p">$</span> <span class="cm">cat notes.txt</span>
+bonjour
+au revoir</pre>
+      </div>
+    </section>
+
+    <section id="o-lire">
+      <div class="sec-head"><span class="num">05</span><h2>Lire le contenu d'un fichier</h2></div>
+      <div class="cmds">
+        <div class="cmd"><span class="c">cat</span><span class="d">Voir le contenu du fichier, d'un seul bloc.</span></div>
+        <div class="cmd"><span class="c">less</span><span class="d">Affiche le contenu d'un fichier page par page.</span></div>
+        <div class="cmd"><span class="c">head</span><span class="d">Affiche juste le début d'un fichier.</span></div>
+        <div class="cmd"><span class="c">tail</span><span class="d">Affiche la fin d'un fichier.</span></div>
+        <div class="cmd"><span class="c">-n 3</span><span class="d">Avec <span class="mono">head</span> ou <span class="mono">tail</span>&nbsp;: les 3 premières ou 3 dernières lignes.</span></div>
+        <div class="cmd"><span class="c">wc</span><span class="d">Donne le nombre de lignes, de mots et de caractères.</span></div>
+      </div>
+    </section>
+
+    <section id="o-gerer">
+      <div class="sec-head"><span class="num">06</span><h2>Copier, déplacer, supprimer</h2></div>
+      <div class="cmds">
+        <div class="cmd"><span class="c">cp source destination</span><span class="d">Copie un fichier.</span></div>
+        <div class="cmd"><span class="c">mv</span><span class="d">Renomme ou déplace un fichier.</span></div>
+        <div class="cmd danger"><span class="c">rm</span><span class="d">Supprime un fichier.</span></div>
+        <div class="cmd danger"><span class="c">rmdir</span><span class="d">Supprime un répertoire sans fichiers à l'intérieur.</span></div>
+      </div>
+      <div class="note warn" style="margin-top:20px">
+        <span class="title">Pas de corbeille</span>
+        <p><span class="mono">rm</span> supprime définitivement&nbsp;: rien n'est mis de côté, rien ne se récupère.</p>
+      </div>
+    </section>
+
+    <section id="o-aide">
+      <div class="sec-head"><span class="num">07</span><h2>Obtenir de l'aide</h2></div>
+      <div class="cmds">
+        <div class="cmd"><span class="c">man commande</span><span class="d">Affiche le manuel de la commande. <em>— je connais la commande, je cherche ses options.</em></span></div>
+        <div class="cmd"><span class="c">apropos</span><span class="d">Cherche la commande à utiliser pour faire quelque chose. <em>— je connais le besoin, je cherche la commande.</em></span></div>
+      </div>
+    </section>
+
+    <section id="o-composer">
+      <div class="sec-head"><span class="num">08</span><h2>Composer des commandes</h2></div>
+      <div class="cmds">
+        <div class="cmd"><span class="c">cut</span><span class="d">Sélectionner.</span></div>
+        <div class="cmd"><span class="c">paste</span><span class="d">Assembler.</span></div>
+        <div class="cmd"><span class="c">sort</span><span class="d">Trier.</span></div>
+        <div class="cmd"><span class="c">sort -r</span><span class="d">Trier dans le sens inverse.</span></div>
+        <div class="cmd"><span class="c">sort -n</span><span class="d">Trier de manière numérique.</span></div>
+        <div class="cmd"><span class="c">uniq</span><span class="d">Si quelque chose est présent en plusieurs exemplaires, n'en laisse qu'un seul.</span></div>
+        <div class="cmd"><span class="c">|</span><span class="d">Le <strong>pipe</strong> (tube)&nbsp;: sert à combiner deux commandes, la sortie de la première devient l'entrée de la seconde.</span></div>
+      </div>
+
+      <h3>Les options de sélection <sup class="fix">✱</sup></h3>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Option</th><th>Commande</th><th>Rôle</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">:</td><td class="mono">—</td><td>Le séparateur utilisé dans le fichier (exemple&nbsp;: <span class="mono">/etc/passwd</span>).</td></tr>
+            <tr><td class="mono">-d</td><td class="mono">cut</td><td><strong>Délimiteur</strong>&nbsp;: indique quel caractère sépare les colonnes — <span class="mono">-d:</span></td></tr>
+            <tr><td class="mono">-f</td><td class="mono">cut</td><td><strong>Champ</strong>&nbsp;: la colonne que je veux garder — <span class="mono">-f1</span></td></tr>
+            <tr><td class="mono">-c</td><td class="mono">cut</td><td><strong>Caractère</strong>&nbsp;: les caractères que je veux garder — <span class="mono">-c1-5</span></td></tr>
+            <tr><td class="mono">-k</td><td class="mono">sort</td><td><strong>Champ de tri</strong>&nbsp;: la colonne sur laquelle trier — <span class="mono">-k2</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="term" style="margin-top:20px">
+        <div class="term-bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="t">cut | sort | uniq <span class="tag add" style="vertical-align:0">complément</span></span></div>
+<pre><span class="p">$</span> <span class="cm">cut -d: -f7 /etc/passwd | sort | uniq</span>
+/bin/bash
+/bin/false
+/usr/sbin/nologin
+<span class="hash"># cut : 7e champ, séparé par « : » → sort : trie → uniq : un seul exemplaire</span></pre>
+      </div>
+      <div class="note" style="margin-top:16px">
+        <p><span class="mono">uniq</span> ne supprime que les doublons <strong>consécutifs</strong>&nbsp;: c'est pour cela qu'on trie avec <span class="mono">sort</span> juste avant.</p>
+      </div>
+    </section>
+
+    <section id="o-recap">
+      <div class="sec-head"><span class="num">—</span><h2>Aide-mémoire</h2></div>
+      <div class="search">
+        <label for="q">Filtrer les commandes</label>
+        <input id="q" type="search" placeholder="ex. : trier, supprimer, ls…" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="tw">
+        <table id="recap">
+          <thead><tr><th>Commande</th><th>Rôle</th><th>Chapitre</th></tr></thead>
+          <tbody>
+            <tr><td>pwd</td><td>Emplacement courant dans l'arborescence</td><td class="cat">Se déplacer</td></tr>
+            <tr><td>ls</td><td>Lister les fichiers du répertoire</td><td class="cat">Se déplacer</td></tr>
+            <tr><td>ls -l</td><td>Lister avec les détails (d = dossier, - = fichier)</td><td class="cat">Se déplacer</td></tr>
+            <tr><td>ls -a</td><td>Afficher aussi les fichiers cachés (commençant par .)</td><td class="cat">Se déplacer</td></tr>
+            <tr><td>cd</td><td>Changer de répertoire</td><td class="cat">Se déplacer</td></tr>
+            <tr><td>cd ..</td><td>Remonter dans le répertoire père</td><td class="cat">Se déplacer</td></tr>
+            <tr><td>file</td><td>Déterminer le type d'un fichier</td><td class="cat">Se déplacer</td></tr>
+            <tr><td>mkdir</td><td>Créer un répertoire</td><td class="cat">Créer</td></tr>
+            <tr><td>touch</td><td>Créer un fichier vide</td><td class="cat">Créer</td></tr>
+            <tr><td>nano</td><td>Éditer un fichier</td><td class="cat">Créer</td></tr>
+            <tr><td>&gt; fichier</td><td>Rediriger la sortie en écrasant le fichier</td><td class="cat">Créer</td></tr>
+            <tr><td>&gt;&gt; fichier</td><td>Rediriger la sortie en ajoutant à la fin</td><td class="cat">Créer</td></tr>
+            <tr><td>cat</td><td>Voir le contenu d'un fichier</td><td class="cat">Lire</td></tr>
+            <tr><td>less</td><td>Afficher un fichier page par page</td><td class="cat">Lire</td></tr>
+            <tr><td>head</td><td>Afficher le début d'un fichier</td><td class="cat">Lire</td></tr>
+            <tr><td>tail</td><td>Afficher la fin d'un fichier</td><td class="cat">Lire</td></tr>
+            <tr><td>head -n 3</td><td>Les 3 premières lignes (tail -n 3 : les 3 dernières)</td><td class="cat">Lire</td></tr>
+            <tr><td>wc</td><td>Compter les lignes, les mots, les caractères</td><td class="cat">Lire</td></tr>
+            <tr><td>cp source destination</td><td>Copier un fichier</td><td class="cat">Gérer</td></tr>
+            <tr><td>mv</td><td>Renommer ou déplacer un fichier</td><td class="cat">Gérer</td></tr>
+            <tr data-danger><td>rm</td><td>Supprimer un fichier (pas de corbeille)</td><td class="cat">Gérer</td></tr>
+            <tr data-danger><td>rmdir</td><td>Supprimer un répertoire vide</td><td class="cat">Gérer</td></tr>
+            <tr><td>man commande</td><td>Manuel d'une commande</td><td class="cat">Aide</td></tr>
+            <tr><td>apropos</td><td>Trouver la commande qui fait quelque chose</td><td class="cat">Aide</td></tr>
+            <tr><td>cut</td><td>Sélectionner des colonnes ou des caractères</td><td class="cat">Composer</td></tr>
+            <tr><td>paste</td><td>Assembler</td><td class="cat">Composer</td></tr>
+            <tr><td>sort</td><td>Trier</td><td class="cat">Composer</td></tr>
+            <tr><td>sort -r</td><td>Trier dans le sens inverse</td><td class="cat">Composer</td></tr>
+            <tr><td>sort -n</td><td>Trier de manière numérique</td><td class="cat">Composer</td></tr>
+            <tr><td>uniq</td><td>Ne garder qu'un exemplaire des lignes identiques consécutives</td><td class="cat">Composer</td></tr>
+            <tr><td>|</td><td>Pipe : combiner deux commandes</td><td class="cat">Composer</td></tr>
+            <tr><td>echo</td><td>Répéter le texte écrit</td><td class="cat">Base</td></tr>
+          </tbody>
+        </table>
+        <p class="empty" id="empty" hidden>Aucune commande ne correspond.</p>
+      </div>
+    </section>
+
+    <section id="o-relecture">
+      <div class="sec-head"><span class="num">—</span><h2>Notes de relecture</h2></div>
+      <div class="body">
+        <p style="color:var(--ink-soft);font-size:14px">Contenu repris intégralement des notes d'origine, orthographe et accents rétablis. Deux points précisés et trois exemples ajoutés, tous signalés dans la page.</p>
+      </div>
+      <div class="tw" style="margin-top:14px">
+        <table>
+          <thead><tr><th>Chapitre</th><th>Note d'origine</th><th>Précision</th></tr></thead>
+          <tbody>
+            <tr><td>04 · Créer</td><td class="mono">« &gt; remplit le fichier »</td><td><span class="mono">&gt;</span> <strong>écrase</strong> le contenu existant du fichier&nbsp;; c'est <span class="mono">&gt;&gt;</span> qui ajoute à la suite.</td></tr>
+            <tr><td>08 · Composer</td><td class="mono">« -k je veux ce champ »</td><td><span class="mono">-k</span> est l'option de <strong>sort</strong> (colonne de tri). Pour <span class="mono">cut</span>, le champ se choisit avec <strong><span class="mono">-f</span></strong>, et <span class="mono">-d</span> définit le délimiteur.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:13px;color:var(--ink-soft);margin-top:14px;max-width:68ch">Ajouts signalés <span class="tag add">complément</span>&nbsp;: le schéma d'arborescence, la lecture d'un <span class="mono">ls -l</span>, l'exemple <span class="mono">cut | sort | uniq</span> et l'aide-mémoire final, qui ne fait que regrouper les commandes du cours.</p>
+    </section>
+  </main>
+</div>
+</div>
+
+<footer>
+  <span>Classeur d'informatique — Kenzo Metgy</span>
+  <span>Représentation de l'information · 9 septembre 2026</span>
+  <span>Systèmes d'exploitation · 7 septembre 2026</span>
+</footer>
+
+<script>
+(function(){
+  /* ---------- navigation entre les deux cours ---------- */
+  var panes={info:document.getElementById('pane-info'),os:document.getElementById('pane-os')};
+  var tabs=Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  var current='info';
+
+  function show(name,opts){
+    if(!panes[name]) name='info';
+    current=name;
+    Object.keys(panes).forEach(function(k){panes[k].hidden=(k!==name);});
+    tabs.forEach(function(t){t.setAttribute('aria-selected',String(t.dataset.pane===name));});
+    if(!opts||!opts.keepScroll) window.scrollTo({top:0,behavior:(opts&&opts.smooth)?'smooth':'auto'});
+  }
+  tabs.forEach(function(t){
+    t.addEventListener('click',function(){show(t.dataset.pane);history.replaceState(null,'','#'+t.dataset.pane);});
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-goto]'),function(b){
+    b.addEventListener('click',function(){show(b.dataset.goto);history.replaceState(null,'','#'+b.dataset.goto);});
+  });
+
+  function goTo(id){
+    var el=document.getElementById(id);
+    if(!el) return;
+    var pane=el.closest('.course');
+    if(pane){var name=pane.id.replace('pane-','');if(name!==current) show(name,{keepScroll:true});}
+    el.scrollIntoView({behavior:'smooth',block:'start'});
+    var head=el.querySelector('.sec-head')||el;
+    head.classList.remove('flash');void head.offsetWidth;head.classList.add('flash');
+  }
+
+  /* ancres du sommaire : on passe par goTo pour gérer le changement de cours */
+  Array.prototype.forEach.call(document.querySelectorAll('nav.toc a'),function(a){
+    a.addEventListener('click',function(e){e.preventDefault();goTo(a.getAttribute('href').slice(1));history.replaceState(null,'',a.getAttribute('href'));});
+  });
+
+  /* ouverture sur une ancre : #os, #info ou #i-conversion */
+  var h=(location.hash||'').slice(1);
+  if(h==='os'||h==='info'){show(h);}
+  else if(h){var t0=document.getElementById(h);if(t0){var p0=t0.closest('.course');if(p0)show(p0.id.replace('pane-',''),{keepScroll:true});setTimeout(function(){goTo(h);},60);}}
+
+  /* ---------- index de recherche global ---------- */
+  var index=[];
+  Object.keys(panes).forEach(function(key){
+    var courseLabel=key==='info'?"Représentation de l'information":"Systèmes d'exploitation";
+    Array.prototype.forEach.call(panes[key].querySelectorAll('section'),function(sec){
+      var h2=sec.querySelector('.sec-head h2');
+      if(h2) index.push({course:key,cl:courseLabel,id:sec.id,label:h2.textContent.trim(),sub:'',mono:false});
+      Array.prototype.forEach.call(sec.querySelectorAll('h3,h4'),function(hx){
+        index.push({course:key,cl:courseLabel,id:sec.id,label:hx.textContent.replace('complément','').trim(),sub:h2?h2.textContent.trim():'',mono:false});
+      });
+      Array.prototype.forEach.call(sec.querySelectorAll('.cmd'),function(c){
+        var k=c.querySelector('.c'),d=c.querySelector('.d');
+        if(k) index.push({course:key,cl:courseLabel,id:sec.id,label:k.textContent.trim(),sub:d?d.textContent.trim():'',mono:true});
+      });
+      Array.prototype.forEach.call(sec.querySelectorAll('.def dt'),function(dt){
+        index.push({course:key,cl:courseLabel,id:sec.id,label:dt.textContent.trim(),sub:h2?h2.textContent.trim():'',mono:false});
+      });
+    });
+  });
+
+  var gq=document.getElementById('gq'),gres=document.getElementById('gres'),cursor=-1,shown=[];
+  function norm(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');}
+  function close(){gres.hidden=true;gq.setAttribute('aria-expanded','false');cursor=-1;}
+  function draw(){
+    var v=norm(gq.value.trim());
+    if(!v){close();return;}
+    shown=index.filter(function(e){return norm(e.label).indexOf(v)>=0||norm(e.sub).indexOf(v)>=0;}).slice(0,12);
+    gres.innerHTML='';
+    if(!shown.length){
+      var p=document.createElement('p');p.className='none';p.textContent='Rien trouvé dans les deux cours.';gres.appendChild(p);
+    }else{
+      shown.forEach(function(e,i){
+        var b=document.createElement('button');b.type='button';
+        var lab=document.createElement('span');lab.className='lab';
+        var k=document.createElement('span');k.className=e.mono?'k':'';k.textContent=e.label;lab.appendChild(k);
+        if(e.sub){var s=document.createElement('span');s.className='sub';s.textContent=e.sub.length>70?e.sub.slice(0,70)+'…':e.sub;lab.appendChild(s);}
+        var bd=document.createElement('span');bd.className='badge '+e.course;bd.textContent=e.course==='info'?'Information':'Systèmes';
+        b.appendChild(lab);b.appendChild(bd);
+        b.addEventListener('click',function(){close();gq.blur();goTo(e.id);});
+        b.addEventListener('mouseenter',function(){cursor=i;mark();});
+        gres.appendChild(b);
+      });
+    }
+    gres.hidden=false;gq.setAttribute('aria-expanded','true');
+  }
+  function mark(){
+    Array.prototype.forEach.call(gres.querySelectorAll('button'),function(b,i){b.classList.toggle('on',i===cursor);});
+  }
+  gq.addEventListener('input',draw);
+  gq.addEventListener('focus',function(){if(gq.value.trim())draw();});
+  gq.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){close();gq.blur();return;}
+    if(gres.hidden||!shown.length) return;
+    if(e.key==='ArrowDown'){e.preventDefault();cursor=(cursor+1)%shown.length;mark();}
+    else if(e.key==='ArrowUp'){e.preventDefault();cursor=(cursor-1+shown.length)%shown.length;mark();}
+    else if(e.key==='Enter'){e.preventDefault();var pick=shown[cursor<0?0:cursor];close();gq.blur();goTo(pick.id);}
+  });
+  document.addEventListener('click',function(e){if(!e.target.closest('.gsearch'))close();});
+  document.addEventListener('keydown',function(e){
+    if(e.key==='/'&&document.activeElement!==gq&&!/^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement.tagName)){
+      e.preventDefault();gq.focus();gq.select();
+    }
+  });
+
+  /* ---------- convertisseur (cours 01) ---------- */
+  var inp=document.getElementById('cv-in'),sel=document.getElementById('cv-base'),msg=document.getElementById('cv-msg');
+  var outs={2:document.getElementById('cv-2'),8:document.getElementById('cv-8'),10:document.getElementById('cv-10'),16:document.getElementById('cv-16')};
+  var digits='0123456789ABCDEF';
+  function setOut(b2,b8,b10,b16){outs[2].textContent=b2;outs[8].textContent=b8;outs[10].textContent=b10;outs[16].textContent=b16;}
+  function convert(){
+    var base=parseInt(sel.value,10);
+    var raw=(inp.value||'').trim().toUpperCase().replace(/\s+/g,'');
+    if(!raw){setOut('—','—','—','—');msg.className='msg';msg.textContent='Saisir un nombre entier positif.';return;}
+    var allowed=digits.slice(0,base);
+    for(var i=0;i<raw.length;i++){
+      if(allowed.indexOf(raw[i])<0){
+        setOut('—','—','—','—');msg.className='msg warn';
+        msg.textContent='Chiffre « '+raw[i]+' » impossible en base '+base+' : C = {'+allowed.split('').join(', ')+'}.';
+        return;
+      }
+    }
+    var n=parseInt(raw,base);
+    if(!isFinite(n)||n>Number.MAX_SAFE_INTEGER){setOut('—','—','—','—');msg.className='msg warn';msg.textContent='Nombre trop grand pour être converti ici.';return;}
+    setOut(n.toString(2),n.toString(8),n.toString(10),n.toString(16).toUpperCase());
+    var bin=n.toString(2);
+    if(n<=255){msg.className='msg';msg.textContent='Tient sur 1 octet (8 bits) : '+('00000000'+bin).slice(-8)+'.';}
+    else{msg.className='msg warn';msg.textContent='Dépasse la capacité d’un octet (max 255) : il faut '+bin.length+' bits.';}
+  }
+  inp.addEventListener('input',convert);
+  sel.addEventListener('change',convert);
+  convert();
+
+  /* ---------- filtre de l'aide-mémoire (cours 02) ---------- */
+  var q=document.getElementById('q'),tbl=document.getElementById('recap'),empty=document.getElementById('empty');
+  var rows=Array.prototype.slice.call(tbl.tBodies[0].rows);
+  q.addEventListener('input',function(){
+    var v=norm(q.value.trim()),n=0;
+    rows.forEach(function(r){var hit=!v||norm(r.textContent).indexOf(v)>=0;r.hidden=!hit;if(hit)n++;});
+    empty.hidden=n>0;
+  });
+
+  /* ---------- sommaire actif ---------- */
+  if('IntersectionObserver' in window){
+    Object.keys(panes).forEach(function(key){
+      var links=Array.prototype.slice.call(panes[key].querySelectorAll('nav.toc a'));
+      var secs=links.map(function(a){return document.getElementById(a.getAttribute('href').slice(1));});
+      var io=new IntersectionObserver(function(entries){
+        entries.forEach(function(e){
+          if(e.isIntersecting){
+            var i=secs.indexOf(e.target);
+            links.forEach(function(l,j){l.classList.toggle('active',j===i);});
+          }
+        });
+      },{rootMargin:'-15% 0px -75% 0px'});
+      secs.forEach(function(s){if(s)io.observe(s);});
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
