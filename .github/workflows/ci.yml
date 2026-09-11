@@ -14,9 +14,6 @@ jobs:
     name: Format, clippy, tests et build
     # Windows : le hook post-build de Trunk est un script PowerShell.
     runs-on: windows-latest
-    defaults:
-      run:
-        working-directory: classeur
 
     steps:
       - uses: actions/checkout@v4
@@ -29,8 +26,6 @@ jobs:
 
       - name: Cache cargo
         uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: classeur
 
       - name: Format
         run: cargo fmt --check
@@ -53,4 +48,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: classeur-dist
-          path: classeur/dist
+          path: dist
