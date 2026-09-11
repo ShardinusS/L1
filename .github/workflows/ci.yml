@@ -6,46 +6,13 @@ on:
   pull_request:
   workflow_dispatch:
 
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
   verifier:
-    name: Format, clippy, tests et build
-    # Windows : le hook post-build de Trunk est un script PowerShell.
-    runs-on: windows-latest
+    name: Liens, données et pages
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Chaîne d'outils Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-          targets: wasm32-unknown-unknown
-
-      - name: Cache cargo
-        uses: Swatinem/rust-cache@v2
-
-      - name: Format
-        run: cargo fmt --check
-
-      - name: Clippy
-        run: cargo clippy --all-targets -- -D warnings
-
-      - name: Tests
-        run: cargo test
-
-      - name: Installer Trunk
-        uses: jetli/trunk-action@v0.5.0
-        with:
-          version: latest
-
-      - name: Build de production
-        run: trunk build --release
-
-      - name: Publier le bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: classeur-dist
-          path: dist
+      - name: Vérifier le site
+        run: node tools/check.mjs

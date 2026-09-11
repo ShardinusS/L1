@@ -1,124 +1,107 @@
 # Classeur d'informatique — L1
 
-Les cinq matières du semestre réunies dans une application Leptos rendue côté
-client (Rust compilé en WebAssembly), buildée par Trunk. La sortie est un
-dossier statique : rien à faire tourner côté serveur.
+Les cinq matières du semestre réunies dans un site statique : HTML, CSS et
+JavaScript, sans framework, sans build, sans dépendance. Le dépôt *est* le
+site — GitHub Pages le sert tel quel.
 
-Le fichier d'origine `../classeur-informatique.html` est conservé tel quel comme
-référence ; l'application reprend son contenu à l'identique.
+## Ce qu'il y a dedans
 
-## Prérequis
+| Page | Contenu |
+| --- | --- |
+| `index.html` | Accueil : les cinq matières, les révisions, les documents dépouillés |
+| `structures-fondamentales.html` | Logique, ensembles, applications, dénombrement, nombres, complexes, structures algébriques, 4 TD, annales et corrigés |
+| `methodes-calcul.html` | Suites et limites, récurrence, fonctions, dérivées, primitives et intégrales, 3 TD, formulaire |
+| `algorithmique.html` | Algorithme, cycle de développement, types et variables, TD série 1 |
+| `information.html` | Binaire, numération, conversions (avec convertisseur), entiers non signés |
+| `systemes.html` | Linux en ligne de commande, aide-mémoire |
+| `prompts.html` | 35 prompts de révision, un par chapitre, à copier dans un assistant |
+| `entrainement.html` | Séries d'exercices corrigés automatiquement |
 
-```powershell
-rustup default stable
-rustup target add wasm32-unknown-unknown
-rustup component add clippy rustfmt
-cargo install trunk --locked
+## Consulter le site
+
+Ouvrir `index.html` suffit pour lire les fiches. Pour que la recherche et
+l'entraînement fonctionnent, il faut un serveur HTTP (les navigateurs
+interdisent `fetch` depuis `file://`) :
+
+```bash
+python -m http.server 8000
+# puis http://localhost:8000
 ```
 
-## Développer
+Tous les liens sont **relatifs** : le site marche à la racine d'un domaine, dans
+un sous-dossier (`/L1/` sur GitHub Pages), sur une clé USB derrière un serveur
+local, ou dans n'importe quel hébergeur statique. Rien à configurer.
 
-```powershell
-trunk serve --open        # http://127.0.0.1:8080, rechargement à chaud
-```
+## Publier sur GitHub Pages
 
-## Vérifier
-
-```powershell
-cargo fmt --check
-cargo clippy --all-targets -- -D warnings
-cargo test
-```
-
-Les tests tournent sur la machine hôte, sans navigateur : ils couvrent le
-convertisseur de bases, le moteur de recherche, la cohérence de l'index et des
-sommaires, et la redirection des anciens liens.
-
-## Publier
-
-```powershell
-trunk build --release
-```
-
-Le résultat est dans `dist/`. Il faut le servir en HTTP : un navigateur refuse
-de charger un module WebAssembly depuis `file://`. N'importe quel serveur
-statique convient.
-
-Comme l'application utilise de vraies routes (`/systemes`, `/information`…),
-l'hébergeur doit renvoyer `index.html` pour les chemins inconnus. Le script
-`scripts/post-build.ps1`, appelé par Trunk après chaque build, écrit déjà
-`dist/404.html` — ce qui suffit à GitHub Pages. En release, ce même script
-passe le bundle WebAssembly à `wasm-opt -Oz` (environ 1,3 Mo → 700 Ko).
+Dans *Settings → Pages*, choisir **Deploy from a branch**, branche `main`,
+dossier `/ (root)`. Il n'y a rien à construire : les fichiers poussés sont ceux
+qui sont servis. Le `.nojekyll` à la racine évite que GitHub passe le site à
+Jekyll, et `404.html` sert de page d'erreur.
 
 ## Organisation
 
-| Chemin | Rôle |
+```
+index.html, *.html          les pages, contenu inclus
+assets/css/                 les feuilles de style, une par domaine
+assets/js/app.js            thème, recherche, sommaire, convertisseur, copie des prompts
+assets/js/practice.js       l'entraînement : tirage, correction, statistiques
+assets/data/*.json          index de recherche, prompts, banques d'exercices
+sw.js                       consultation hors ligne
+tools/check.mjs             vérification des liens et des données
+```
+
+### Les données
+
+Quatre fichiers JSON, chargés seulement par les pages qui en ont besoin :
+
+| Fichier | Rôle |
 | --- | --- |
-| `index.html` | Coquille Trunk : polices, métadonnées, feuilles de style |
-| `style/` | Le CSS d'origine, découpé, plus `print.css` |
-| `src/app.rs` | Routes, redirection des anciens liens, défilement vers l'ancre |
-| `src/course.rs` | Les cinq matières : route, libellés, classes |
-| `src/search/` | Index typé et moteur de recherche |
-| `src/convert.rs` | Convertisseur de bases (logique pure, testée) |
-| `src/scroll.rs` | Défilement vers une section et surbrillance |
-| `src/theme.rs` | Thème clair / sombre / automatique |
-| `src/components/` | Barre supérieure, recherche, sommaire, convertisseur, aide-mémoire |
-| `src/pages/` | Une page par matière, plus l'accueil, l'entraînement et les prompts |
-| `src/practice/` | Entraînement : banques d'exercices, générateurs, correction, statistiques |
-| `src/prompts/` | Un prompt de révision par chapitre, calibré sur les annales |
-| `src/components/quiz.rs` | Séance d'entraînement (série, correction, bilan) |
-| `public/` | Manifeste, icône, service worker |
-| `tools/` | Transpileur HTML → Leptos et contrôle de fidélité (voir `tools/README.md`) |
+| `search.json` | 348 entrées d'index, chacune pointant vers une ancre de section |
+| `prompts.json` | les 35 prompts, leur niveau et leur calibrage |
+| `practice.json` | 33 chapitres d'entraînement et leurs 285 questions rédigées |
+| `generated.json` | 1 634 exercices pré-tirés, pour que chaque série soit différente |
 
-### Les pages sont transposées, pas réécrites
+`generated.json` pèse environ 530 Ko et n'est chargé que par
+`entrainement.html` : les pages de cours restent légères.
 
-Les modules de `src/pages/` reprennent le balisage du classeur HTML : mêmes
-textes, mêmes classes CSS, mêmes ancres. Chaque page déclare aussi :
+## Vérifier
 
-- `SECTIONS` — les ancres de ses sections ;
-- `TOC` — son sommaire ;
-- `INDEX` — ses entrées de recherche.
+```bash
+node tools/check.mjs
+```
 
-C'est le changement de fond par rapport à la version HTML, qui reconstruisait
-son index en parcourant le DOM au chargement : l'index est maintenant écrit à
-côté du contenu, et des tests vérifient qu'aucune entrée ne pointe vers une
-ancre inexistante.
+Contrôle que chaque lien interne vise un fichier existant, que chaque ancre
+citée existe réellement dans la page visée, que les JSON sont lisibles et
+cohérents entre eux, et que chaque page charge bien ses feuilles de style et ses
+scripts. La CI GitHub lance cette même commande à chaque poussée.
 
-Pour ajouter un chapitre : écrire la fonction de section dans le module de la
-matière, ajouter son ancre à `SECTIONS`, sa ligne au `TOC`, et ses entrées à
-`INDEX`. `cargo test` signale tout oubli.
+## Modifier
 
-## Entraînement
+Le contenu des cours est écrit directement dans les fichiers `.html` : pour
+corriger une fiche, on édite la page et c'est tout.
 
-`/entrainement` propose des séries d'exercices corrigés, une page par matière
-(`/entrainement/systemes`…) et une série mélangée (`/entrainement/melange`).
-Chaque chapitre d'entraînement renvoie à une section du cours; il réunit des
-questions rédigées et des générateurs qui tirent de nouvelles valeurs à chaque
-série (conversions, traces, restes modulo, permutations…). Les statistiques
-restent dans le `localStorage` du navigateur.
+Pour ajouter une section, lui donner un `id`, l'ajouter au sommaire (`nav.toc`)
+de la page, et — si elle doit être trouvable — ajouter une entrée dans
+`assets/data/search.json`. `node tools/check.mjs` signale les oublis.
 
-Pour ajouter une question : l'écrire dans le tableau du chapitre, dans
-`src/practice/<matière>.rs` (la première option d'un QCM est la bonne).
-`cargo test` vérifie que chaque chapitre vise une ancre existante et que la
-réponse attendue de chaque générateur passe le correcteur, sur 400 tirages.
+Pour ajouter une question d'entraînement, l'écrire dans le chapitre voulu de
+`assets/data/practice.json`. Pour un QCM (`"kind": "choice"`), la **première**
+option du tableau est la bonne : l'ordre est mélangé à l'affichage.
 
 ## Prompts de révision
 
-`/prompts` réunit un prompt sur mesure par chapitre des cinq matières, à copier
-dans un assistant. Chaque prompt borne explicitement le programme du chapitre,
-et porte un niveau (`points faciles`, `cœur du barème`, `exigeant`,
-`jamais tombé`) déduit du dépouillement des cinq sujets de Structures
-fondamentales disponibles depuis la réforme — les deux partiels, les deux
-examens finals et le rattrapage — ou, pour les matières sans annales, du volume
-que les TD consacrent à la notion.
+`prompts.html` réunit un prompt sur mesure par chapitre, à coller dans un
+assistant. Chacun borne explicitement le programme du chapitre et porte un
+niveau — `points faciles`, `cœur du barème`, `exigeant`, `jamais tombé` — déduit
+du dépouillement des cinq sujets de Structures fondamentales disponibles depuis
+la réforme : les deux partiels, les deux examens finals et le rattrapage. Pour
+les matières sans annales, le calibrage vient du volume que les TD consacrent à
+la notion.
 
-Deux chapitres portent la mention `jamais tombé` : **dénombrement** et
-**nombres complexes**, absents des cinq sujets alors que le TD 3 est entièrement
-consacré aux seconds. Leur prompt le dit en ouverture et borne la séance.
-
-Les prompts vivent dans `src/prompts/mod.rs`, une constante par matière. Le
-numéro affiché n'y est pas stocké : il est lu dans le sommaire de la matière,
-et `cargo test` vérifie que chaque prompt vise une section qui existe.
+Deux chapitres portent la mention `jamais tombé` : **dénombrement** et **nombres
+complexes**, absents des cinq sujets alors que le TD 3 est entièrement consacré
+aux seconds. Leur prompt le dit en ouverture et borne la séance.
 
 ## Raccourcis
 
@@ -128,3 +111,17 @@ et `cargo test` vérifie que chaque prompt vise une section qui existe.
 | `↑` `↓` | Parcourir les résultats |
 | `Entrée` | Ouvrir le résultat |
 | `Échap` | Fermer la recherche |
+| `1` `2` `3`… | Répondre à un QCM d'entraînement |
+
+## Historique
+
+Ce classeur a d'abord existé en Rust (Leptos compilé en WebAssembly). Cette
+version reste consultable dans l'historique git ; elle a été remplacée par le
+site statique, plus rapide à charger et déployable sans build.
+
+---
+
+**Sources.** Structures fondamentales et Méthodes et techniques de calcul —
+cours, TD, sujets et corrigés de Fabien Durand, UPJV. Algorithmique 1 — cours de
+Jordan Caracotte et Léo Robert. Représentation de l'information et Systèmes
+d'exploitation — notes de cours personnelles.

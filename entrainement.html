@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Kenzo Metgy">
+<meta name="description" content="Series d'exercices corriges automatiquement, matiere par matiere.">
+<meta name="theme-color" content="#F5F6F9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111621" media="(prefers-color-scheme: dark)">
+<title>Entraînement — Classeur L1</title>
+
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+
+<script>
+/* Applique le theme avant le premier rendu pour eviter le flash de couleurs. */
+(function(){try{var t=localStorage.getItem('classeur-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();
+</script>
+
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/base.css">
+<link rel="stylesheet" href="assets/css/components.css">
+<link rel="stylesheet" href="assets/css/subject-03.css">
+<link rel="stylesheet" href="assets/css/practice.css">
+<link rel="stylesheet" href="assets/css/prompts.css">
+<link rel="stylesheet" href="assets/css/print.css">
+
+<!-- Les polices ne bloquent pas le premier rendu. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" media="print" onload="this.media='all'"
+      href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap"></noscript>
+</head>
+<body>
+<div class="topbar"><div class="topbar-inner">
+<a href="index.html" class="brand">Classeur<span>Kenzo Metgy · L1 · 2026-2027</span></a>
+<nav class="tabs" aria-label="Matières"><a href="index.html" class="tab tab-home"><span class="dot"></span>Accueil</a><a href="structures-fondamentales.html" class="tab tab-sf"><span class="dot"></span>Structures fondamentales</a><a href="methodes-calcul.html" class="tab tab-mtc"><span class="dot"></span>Méthodes et techniques de calcul</a><a href="algorithmique.html" class="tab tab-algo"><span class="dot"></span>Algorithmique 1</a><a href="information.html" class="tab tab-info"><span class="dot"></span>Représentation de l'information</a><a href="systemes.html" class="tab tab-os"><span class="dot"></span>Systèmes d'exploitation</a><a href="prompts.html" class="tab tab-prompt"><span class="dot"></span>Prompts</a><a href="entrainement.html" class="tab tab-train" aria-current="page"><span class="dot"></span>Entraînement</a></nav>
+<div class="gsearch">
+<span class="icon" aria-hidden="true">⌕</span>
+<input id="gq" type="search" placeholder="Chercher dans les 5 matières…" autocomplete="off" spellcheck="false" aria-label="Chercher dans toutes les matières" aria-expanded="false" aria-controls="gres">
+<kbd>/</kbd>
+<div class="results" id="gres" role="listbox" hidden></div>
+</div>
+<button class="theme-btn" type="button" aria-label="Thème automatique" title="Thème automatique">◐</button>
+</div></div>
+
+<div class="course" id="train">
+<header class="masthead"><div class="masthead-inner">
+<div class="eyebrow">Entraînement</div>
+<h1>S’exercer, matière par matière</h1>
+<p class="lede">Chargement des exercices&hellip;</p>
+</div></header>
+</div>
+<noscript>
+<div class="shell"><main><section><div class="sec-head"><span class="num">—</span><h2>Entraînement</h2></div>
+<div class="body"><p>Cette page pose des exercices et les corrige&nbsp;: il lui faut JavaScript. Les fiches de cours, elles, se lisent sans.</p></div>
+</section></main></div>
+</noscript>
+
+<footer>
+<span>Classeur d'informatique — Kenzo Metgy, L1 2026-2027</span>
+<span>Structures fondamentales · Méthodes et techniques de calcul · F. Durand, UPJV</span>
+<span>Algorithmique 1 · J. Caracotte et L. Robert</span>
+<span>Représentation de l'information · Systèmes d'exploitation · notes personnelles</span>
+</footer>
+
+<script src="assets/js/app.js" defer></script>
+<script src="assets/js/practice.js" defer></script>
+</body>
+</html>
