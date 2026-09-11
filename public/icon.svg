@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Classeur">
+  <rect width="512" height="512" rx="72" fill="#161E33"/>
+  <rect x="112" y="96" width="288" height="320" rx="12" fill="#F5F6F9"/>
+  <rect x="112" y="96" width="40" height="320" rx="12" fill="#5B3E9E"/>
+  <rect x="188" y="168" width="164" height="18" rx="9" fill="#26469F"/>
+  <rect x="188" y="228" width="164" height="18" rx="9" fill="#8A5A12"/>
+  <rect x="188" y="288" width="164" height="18" rx="9" fill="#0E6B60"/>
+  <rect x="188" y="348" width="104" height="18" rx="9" fill="#C2C9D8"/>
+</svg>

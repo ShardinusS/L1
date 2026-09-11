@@ -1,0 +1,402 @@
+//! Un prompt d'apprentissage sur mesure par chapitre.
+//!
+//! Chaque entrée réunit trois choses : la section du cours qu'elle vise, le
+//! calibrage tiré des annales (ou, à défaut, du volume des TD), et le texte à
+//! coller dans un assistant. Les prompts sont volontairement bornés : ils
+//! disent à l'assistant où s'arrêter, parce que la moitié du temps perdu en
+//! révision se passe au-delà du programme.
+
+use crate::course::{Course, COURSES};
+
+#[cfg(test)]
+mod tests;
+
+/// Ce que le chapitre coûte réellement, une fois les annales dépouillées.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum Level {
+    /// Points faciles : à sécuriser en premier.
+    Acquis,
+    /// Le cœur du barème.
+    Central,
+    /// Exigeant, ou rentable seulement une fois le reste tenu.
+    Exigeant,
+    /// Au programme mais jamais tombé : à survoler.
+    Marginal,
+}
+
+impl Level {
+    pub const fn label(self) -> &'static str {
+        match self {
+            Level::Acquis => "points faciles",
+            Level::Central => "cœur du barème",
+            Level::Exigeant => "exigeant",
+            Level::Marginal => "jamais tombé",
+        }
+    }
+
+    /// Suffixe de classe CSS : `.lv-central`…
+    pub const fn key(self) -> &'static str {
+        match self {
+            Level::Acquis => "acquis",
+            Level::Central => "central",
+            Level::Exigeant => "exigeant",
+            Level::Marginal => "marginal",
+        }
+    }
+}
+
+pub struct ChapterPrompt {
+    pub course: Course,
+    /// Ancre de la section du cours correspondante.
+    pub anchor: &'static str,
+    pub title: &'static str,
+    pub level: Level,
+    /// Ce que les annales (ou les TD) disent de ce chapitre.
+    pub evidence: &'static str,
+    /// Le texte à copier.
+    pub body: &'static str,
+}
+
+impl ChapterPrompt {
+    /// Numéro affiché : celui que le sommaire de la matière donne à la
+    /// section visée. Il n'est donc pas dupliqué ici, et ne peut pas dériver.
+    pub fn num(&self) -> &'static str {
+        crate::pages::toc_of(self.course)
+            .iter()
+            .find(|i| i.anchor == self.anchor)
+            .map_or("—", |i| i.num)
+    }
+
+    /// Lien vers la section du cours visée.
+    pub fn href(&self) -> String {
+        format!("{}#{}", self.course.route(), self.anchor)
+    }
+
+    /// Lien vers le chapitre d'entraînement de la matière.
+    pub fn practice_href(&self) -> String {
+        self.course.practice_route()
+    }
+}
+
+pub fn prompts(course: Course) -> &'static [ChapterPrompt] {
+    match course {
+        Course::Sf => SF,
+        Course::Mtc => MTC,
+        Course::Algo => ALGO,
+        Course::Info => INFO,
+        Course::Os => OS,
+    }
+}
+
+/// Nombre total de prompts, toutes matières confondues.
+pub fn total() -> usize {
+    COURSES.iter().map(|c| prompts(*c).len()).sum()
+}
+
+/// En-tête commun, rappelé au début de chaque prompt.
+pub const PREAMBLE: &str = "Tu es mon tuteur pour une licence 1 d'informatique à l'UPJV (2026-2027). Réponds en français, avec la notation du cours. Ne traite que ce qui est listé ci-dessous : si je m'égare, ramène-moi au périmètre.";
+
+// ═══════════════════════════════════════════ Structures fondamentales
+
+const SF: &[ChapterPrompt] = &[
+    ChapterPrompt {
+        course: Course::Sf,
+        anchor: "sf-logique",
+        title: "Logique et raisonnements",
+        level: Level::Central,
+        evidence: "Partiel 2024 ex. 1 · Partiel 2025 ex. 1-3 · Examen 2025 ex. 2 — 3 sujets sur 5, toujours en ouverture",
+        body: "Chapitre : logique propositionnelle, quantificateurs, négation, raisonnements classiques.\n\nCe que je dois savoir faire, et rien d'autre :\n1. Écrire la négation d'une proposition quantifiée (∀ devient ∃, l'inégalité large devient stricte).\n2. Dire si une proposition ∃∀ / ∀∃ / ∀∀ / ∃∃ est vraie ou fausse, et le justifier — l'absence de justification vaut zéro dans le barème réel.\n3. Traduire une phrase française en quantificateurs : « f est constante », « f n'est pas constante », « f s'annule ».\n4. Donner la contraposée et la réciproque d'une implication, et savoir que la réciproque n'a aucune raison d'être vraie.\n5. Mener les cinq raisonnements classiques : direct, par contraposée, par l'absurde, par disjonction de cas, par contre-exemple.\n\nCalibrage : les sujets restent sur des propositions de la forme « ∃x ∈ ℝ, ∀y ∈ ℝ, x + y ≥ 0 » ou « si a + b est irrationnel alors a ou b est irrationnel ». Pas de logique formelle, pas de tables de vérité à plus de trois variables.\n\nDéroulé : pose-moi une question à la fois. Je réponds, tu corriges en pointant précisément ce qui manque dans la rédaction, puis tu enchaînes. Après huit questions, dis-moi quel point je dois retravailler. Ne me donne jamais la réponse avant que j'aie essayé.",
+    },
+    ChapterPrompt {
+        course: Course::Sf,
+        anchor: "sf-ensembles",
+        title: "Ensembles",
+        level: Level::Central,
+        evidence: "Partiel 2024 ex. 2-4 · Examen 2024 ex. 3 · Rattrapage 2025 ex. 3 — 3 sujets sur 5, environ 4 points à chaque fois",
+        body: "Chapitre : appartenance, inclusion, égalité, opérations sur les ensembles, produit cartésien, différence symétrique.\n\nCe que je dois savoir faire :\n1. Prouver une égalité d'ensembles par double inclusion, rédigée avec « soit x ∈ A … donc x ∈ B, d'où A ⊂ B ».\n2. Répondre à « A ∩ B = A ∩ C entraîne-t-il B = C ? » et construire le contre-exemple quand la réponse est non.\n3. Démontrer (A × B) ∩ (C × D) = (A ∩ C) × (B ∩ D).\n4. Manipuler le complémentaire et la différence symétrique A∆B = (A ∩ B̄) ∪ (Ā ∩ B).\n5. Ne jamais confondre ∈ et ⊂.\n\nCalibrage : les sujets tournent autour de trois ou quatre sous-ensembles d'un même E, jamais plus. Le piège récurrent est de croire qu'une seule des deux conditions (intersection OU réunion) suffit à conclure B = C : il faut les deux, et savoir exhiber le contre-exemple qui le prouve — par exemple A = 2ℕ, B = 2ℕ+1, C = 4ℕ+1.\n\nDéroulé : donne-moi un énoncé, laisse-moi rédiger la preuve entière, puis relis-la comme un correcteur : signale les inclusions non justifiées, les « donc » sans raison, les quantificateurs utilisés comme abréviations au milieu d'une phrase française. Enchaîne sur six énoncés.",
+    },
+    ChapterPrompt {
+        course: Course::Sf,
+        anchor: "sf-applications",
+        title: "Relations et applications",
+        level: Level::Central,
+        evidence: "Partiel 2024 ex. 5-6 · Partiel 2025 ex. 4-7 · Examen 2025 ex. 4 — 3 sujets sur 5, jusqu'à 13 points au partiel 2025",
+        body: "Chapitre : fonctions et applications, injection, surjection, bijection, composition, image directe et image réciproque.\n\nCe que je dois savoir faire :\n1. Prouver que f(A) ∩ B = ∅ équivaut à A ∩ f⁻¹(B) = ∅.\n2. Prouver A ⊂ f⁻¹(f(A)) et f(f⁻¹(B)) ⊂ B, et dire pourquoi ce ne sont pas des égalités en général (injectivité pour la première, surjectivité pour la seconde).\n3. Les implications de composition : g∘f injective ⇒ f injective ; g∘f surjective ⇒ g surjective. Savoir que les réciproques sont fausses.\n4. Montrer qu'une application explicite est bijective et calculer sa réciproque, par exemple (x, y) ↦ (x + 3y, x + y).\n5. Construire des exemples à la demande : g∘f injective avec g non injective, g∘f surjective avec f non surjective, g∘f bijective avec f et g non bijectives — un diagramme sagittal suffit.\n\nCalibrage : c'est le chapitre le plus rentable du partiel. Les énoncés sont abstraits mais courts, et la même demi-douzaine de résultats revient. La fonction indicatrice 1_A (partiel 2025, 4 points) est une variante : 1_{Ā} = 1 − 1_A, 1_{A∩B} = 1_A·1_B, 1_{A∪B} = 1_A + 1_B − 1_A·1_B.\n\nDéroulé : alterne une preuve abstraite et une construction d'exemple. Corrige ma rédaction avant de valider le fond.",
+    },
+    ChapterPrompt {
+        course: Course::Sf,
+        anchor: "sf-denombrement",
+        title: "Cardinaux et dénombrement",
+        level: Level::Marginal,
+        evidence: "Aucun des cinq sujets — ni partiel, ni examen, ni rattrapage",
+        body: "Chapitre : cardinaux, arrangements, combinaisons, coefficients binomiaux.\n\nAvertissement à prendre au sérieux : sur les cinq sujets disponibles depuis la réforme (partiels 2024 et 2025, examens 2024 et 2025, rattrapage 2025), ce chapitre n'apparaît dans aucun exercice. Il fait partie du programme, il peut donc tomber, mais il ne justifie pas le temps qu'on lui consacre spontanément.\n\nCe que je veux, et seulement ça : une séance de trente minutes qui me donne les réflexes de base.\n1. Le sens des quatre situations : avec ou sans ordre, avec ou sans répétition.\n2. Les trois formules : n!, A(n,p) = n!/(n−p)!, C(n,p) = n!/(p!(n−p)!).\n3. Card(A ∪ B) = Card(A) + Card(B) − Card(A ∩ B).\n4. Le nombre de parties d'un ensemble à n éléments : 2ⁿ.\n\nDéroulé : six questions courtes, pas plus, de niveau « combien de mots de 4 lettres distinctes avec un alphabet de 10 ». Si je réponds juste aux six, dis-le-moi et arrête : le temps est mieux placé sur les applications et les permutations. Ne me propose pas d'aller plus loin.",
+    },
+    ChapterPrompt {
+        course: Course::Sf,
+        anchor: "sf-nombres",
+        title: "Les ensembles de nombres",
+        level: Level::Central,
+        evidence: "Examen 2024 ex. 2 et 4 · Examen 2025 ex. 5-6 · Rattrapage 2025 ex. 2, 4 et 7 — l'arithmétique modulaire porte à elle seule ~15 points sur chaque examen final",
+        body: "Chapitre : ℕ, ℤ, ℚ, ℝ, division euclidienne, congruences, ℤ/nℤ, PGCD et Bezout.\n\nCe que je dois savoir faire, dans cet ordre de rentabilité :\n1. Déterminer le reste de la division euclidienne d'une grande puissance par un petit nombre — type 4007^1235 modulo 13. Méthode : réduire la base, chercher le plus petit exposant où l'on retombe sur 1 ou −1, puis découper l'exposant.\n2. Dire si x ↦ ax + b est bijective sur ℤ/nℤ : c'est le cas si et seulement si a est premier avec n. Savoir le démontrer dans les deux sens, et exhiber un contre-exemple concret quand ce n'est pas le cas.\n3. Algorithme d'Euclide étendu : trouver (u, v) tel que au + bv = 1, puis décrire toutes les solutions de au + bv = c sous la forme (u₀k + b·t, v₀k − a·t).\n4. Résoudre x² + bx + c = 0 dans ℤ/nℤ avec n = pq : factoriser, puis discuter les quatre cas de divisibilité.\n5. Les rudiments sur ℚ et ℝ : irrationalité, inf et sup d'un ensemble simple.\n\nCalibrage : c'est le chapitre central de l'examen final, absent du partiel. Les nombres restent petits (13, 35, 51, 65, 67, 77, 101) et les calculs se font à la main — les calculatrices sont interdites.\n\nDéroulé : un exercice complet à la fois, du type de ceux ci-dessus, avec correction de ma rédaction. Vérifie surtout que je justifie la primalité entre a et n au lieu de l'affirmer.",
+    },
+    ChapterPrompt {
+        course: Course::Sf,
+        anchor: "sf-complexes",
+        title: "Nombres complexes",
+        level: Level::Marginal,
+        evidence: "Aucun des cinq sujets, alors que le TD 3 leur est entièrement consacré",
+        body: "Chapitre : forme algébrique et trigonométrique, module, argument, formule de Moivre, racines n-ièmes de l'unité, équations de degré 2.\n\nAvertissement : le TD 3 porte entièrement sur les complexes, et pourtant aucun des cinq sujets depuis la réforme n'en contient le moindre exercice. Le partiel s'arrête aux suites, l'examen final commence à l'arithmétique modulaire : les complexes tombent exactement entre les deux. Ils restent au programme et peuvent apparaître, mais ce n'est pas là qu'il faut placer les dernières heures avant une épreuve.\n\nCe que je veux couvrir, en une séance :\n1. Passer de la forme algébrique à la forme trigonométrique et retour.\n2. Module, argument, conjugué, et les règles de calcul associées.\n3. Moivre et Euler, pour linéariser cos^n et sin^n.\n4. Résoudre az² + bz + c = 0 avec discriminant négatif.\n5. Les racines n-ièmes de l'unité et leur lecture sur le cercle.\n\nDéroulé : huit calculs, pas de démonstration abstraite. Corrige les erreurs de signe et les arguments donnés hors de ]−π, π]. Si je tiens les huit, on arrête là : dis-le-moi franchement plutôt que de proposer un approfondissement.",
+    },
+    ChapterPrompt {
+        course: Course::Sf,
+        anchor: "sf-algebre",
+        title: "Structures algébriques",
+        level: Level::Central,
+        evidence: "Examen 2024 ex. 5-6 · Rattrapage 2025 ex. 5-6 · Examen 2025 ex. 7 — 12 points et plus à chaque examen final",
+        body: "Chapitre : lois de composition interne, groupes, permutations, décomposition en cycles, signature.\n\nCe que je dois savoir faire :\n1. Décomposer une permutation donnée par un tableau en produit de cycles à supports disjoints, puis en produit de transpositions.\n2. Donner l'ordre (ppcm des longueurs des cycles) et la signature ((−1)^nombre de transpositions).\n3. Calculer σ⁻¹, et réduire σ^k pour k énorme en utilisant k modulo l'ordre.\n4. Dire si une permutation d'ordre donné existe dans Perm(Nₙ) : décomposer l'ordre en facteurs premiers, additionner les longueurs de cycles nécessaires, comparer à n.\n5. Dresser la table de composition d'un groupe à quatre éléments et en déduire qu'il s'agit d'un groupe, puis résoudre une équation dans ce groupe.\n6. Vérifier les axiomes de groupe sur un ensemble donné, et repérer lequel manque quand ce n'en est pas un.\n\nCalibrage : c'est l'exercice le plus lourd de chaque examen final (8 points en 2024, 7,5 en 2025). Les permutations portent sur 10 à 13 éléments. La question « existe-t-il une permutation d'ordre k ? » tombe deux fois sur trois et se traite toujours par la même comparaison de cardinal.\n\nDéroulé : donne-moi une permutation complète sous forme de tableau et fais-moi dérouler les six questions, dans l'ordre. Puis change de permutation. Vérifie mes ppcm.",
+    },
+];
+
+// ═══════════════════════════════════ Méthodes et techniques de calcul
+
+const MTC: &[ChapterPrompt] = &[
+    ChapterPrompt {
+        course: Course::Mtc,
+        anchor: "m-suites",
+        title: "Suites et limites",
+        level: Level::Central,
+        evidence: "TD 1 : ~25 limites à calculer, plus les théorèmes de comparaison — le chapitre le plus dense de la feuille",
+        body: "Chapitre : suites numériques, limite finie et infinie, opérations, formes indéterminées, gendarmes, comparaison, monotonie, Cauchy.\n\nCe que je dois savoir faire :\n1. Calculer une limite de suite en gardant les termes dominants : quotients de polynômes, quotients d'exponentielles du type 10ⁿ/(3ⁿ + 9ⁿ), puissances n²/2ⁿ.\n2. Lever une indétermination ∞ − ∞ par la quantité conjuguée : √(n² + 3n) − n.\n3. Reconnaître les quatre formes indéterminées et dire pourquoi la table des opérations ne conclut pas.\n4. Appliquer les gendarmes (avec la même limite des deux côtés, sans quoi le théorème ne dit rien) et le théorème de comparaison.\n5. Utiliser le théorème de la limite monotone : croissante + majorée ⇒ convergente, puis résoudre ℓ = f(ℓ).\n6. Démontrer une limite avec la définition ε : exhiber n₀ en fonction de ε.\n\nCalibrage : tout se fait sur des expressions d'une ligne. Ne me propose ni équivalents, ni développements limités, ni séries : ce n'est pas au programme de ce cours.\n\nDéroulé : dix limites d'affilée, de difficulté croissante, une à la fois. Pour chacune, je dois d'abord dire quelle technique s'applique avant de calculer. Corrige le choix de technique même si le résultat est bon.",
+    },
+    ChapterPrompt {
+        course: Course::Mtc,
+        anchor: "m-arithgeo",
+        title: "Suites arithmétiques et géométriques",
+        level: Level::Acquis,
+        evidence: "TD 1 ex. 1-4 et 9-13 — quatre situations modélisées et trois suites auxiliaires",
+        body: "Chapitre : suites arithmétiques et géométriques, sommes des premiers termes, suites auxiliaires.\n\nCe que je dois savoir faire :\n1. Reconnaître la nature d'une suite à partir d'un énoncé en français : « augmente de 18 Mo par jour » est arithmétique, « augmente de 15 % par semaine » est géométrique de raison 1,15, « perd 12 % de la charge restante » est géométrique de raison 0,88.\n2. Donner le terme général : u₀ + nr ou u₀qⁿ.\n3. Sommer : (n+1)(u₀ + uₙ)/2 ou u₀(1 − qⁿ⁺¹)/(1 − q). Vérifier que je compte bien n + 1 termes.\n4. Résoudre « à partir de quel rang dépasse-t-on X ? » en passant au logarithme, et faire attention au sens de l'inégalité quand ln q < 0.\n5. Traiter uₙ₊₁ = a·uₙ + b : trouver le point fixe ℓ = b/(1 − a), poser vₙ = uₙ − ℓ, conclure.\n\nCalibrage : ce sont des points faciles, donnés en début de sujet. Les valeurs sont réalistes (sauvegardes, utilisateurs, batterie, propagation d'un virus) mais les calculs restent simples.\n\nDéroulé : donne-moi cinq situations rédigées en français, comme dans le TD, une à la fois. Je dois à chaque fois écrire la relation de récurrence, la nature, le terme général, puis répondre à la question numérique. Signale-moi toute confusion entre « augmente de 15 % » et « raison 15 ».",
+    },
+    ChapterPrompt {
+        course: Course::Mtc,
+        anchor: "m-recurrence",
+        title: "Raisonnement par récurrence",
+        level: Level::Central,
+        evidence: "TD 1 ex. 17-26 — dix exercices, et un chapitre entier du cours consacré à la rédaction",
+        body: "Chapitre : principe de récurrence, initialisation, hérédité, rédaction.\n\nCe que je dois savoir faire : démontrer par récurrence, en cinq temps, et sans en sauter un.\n1. Énoncer P(n) explicitement.\n2. Vérifier l'initialisation au bon rang.\n3. Supposer P(n) pour un n fixé.\n4. Démontrer P(n + 1) en utilisant explicitement l'hypothèse.\n5. Conclure en invoquant le principe de récurrence.\n\nLes énoncés du programme : ∑(2i − 1) = n², 2ⁿ ≥ n + 1, 3ⁿ ≥ 2n + 1, n! ≥ 2ⁿ⁻¹, 4 divise 5ⁿ − 1, 5 divise 8ⁿ − 3ⁿ, ∑k² = n(n+1)(2n+1)/6, ∑k³ = (n(n+1)/2)². Plus le schéma « calculer les premiers termes, conjecturer, démontrer ».\n\nCalibrage : la difficulté n'est jamais dans l'idée, toujours dans la rédaction. Les quatre fautes à traquer chez moi : démarrer par l'hérédité sans initialisation, utiliser au rang n + 1 la formule à démontrer, oublier de conclure, conclure sans citer le principe de récurrence.\n\nDéroulé : donne-moi un énoncé, laisse-moi rédiger la démonstration complète, puis corrige-la ligne à ligne comme un correcteur qui compte les points. Ne passe à l'énoncé suivant que si les cinq temps y sont. Fais-en six.",
+    },
+    ChapterPrompt {
+        course: Course::Mtc,
+        anchor: "m-fonctions",
+        title: "Fonctions et domaine de définition",
+        level: Level::Acquis,
+        evidence: "TD 3 ex. 1 : douze domaines à déterminer, et c'est la première question de toutes les études de fonction",
+        body: "Chapitre : définition d'une fonction, domaine de définition, composition, images et antécédents, injectivité, graphe, parité.\n\nCe que je dois savoir faire :\n1. Déterminer un domaine de définition. Trois contraintes seulement : dénominateur ≠ 0, argument d'une racine ou d'une puissance non entière ≥ 0, argument d'un logarithme > 0. Les traiter séparément puis intersecter, et écrire le résultat en réunion d'intervalles.\n2. Ne pas confondre la borne incluse d'une racine et la borne exclue d'un logarithme.\n3. Composer deux fonctions dans le bon ordre.\n4. Donner les antécédents d'une valeur, et savoir qu'ils peuvent être plusieurs.\n5. Reconnaître une fonction paire ou impaire, par le calcul et sur le graphe.\n6. Justifier qu'une fonction strictement monotone est une bijection sur son image.\n\nCalibrage : question courte, points faciles, présente partout. Les expressions à traiter ressemblent à √(3x+2) − 1/(3−x), 1/√(−x²+2x−1), √(3x−1)/(x²−x−2).\n\nDéroulé : donne-moi douze expressions, une à la fois, de difficulté croissante — d'abord une contrainte, puis deux, puis trois. Je dois écrire les contraintes avant le résultat. Refuse une réponse donnée sans les contraintes, même si elle est juste.",
+    },
+    ChapterPrompt {
+        course: Course::Mtc,
+        anchor: "m-limites",
+        title: "Limites de fonctions et asymptotes",
+        level: Level::Central,
+        evidence: "TD 3 : étape 2 et 3 de chacune des onze études de fonction",
+        body: "Chapitre : limite en un point, limites latérales, limites en l'infini, opérations, asymptotes.\n\nCe que je dois savoir faire :\n1. Calculer une limite à gauche et à droite d'une valeur interdite, en déterminant le signe du dénominateur de chaque côté (0⁺ ou 0⁻). C'est là que se perdent les points.\n2. Conclure qu'il n'y a pas de limite quand les deux limites latérales diffèrent.\n3. Lever une forme 0/0 par factorisation.\n4. Calculer une limite en ±∞ par les termes dominants.\n5. Nommer les asymptotes : verticale quand la limite en x₀ est infinie, horizontale quand la limite en ±∞ est finie, oblique quand f(x) − (ax + b) tend vers 0.\n6. Trouver une asymptote oblique par division euclidienne, comme pour (2x² − 3x)/(x − 2) = 2x + 1 + 2/(x − 2).\n\nCalibrage : le cours donne la définition avec ε et δ mais précise qu'on ne la manipulera pas formellement. Ne me fais donc jamais faire de preuve en ε-δ sur les fonctions : ce n'est pas ce qui est évalué ici.\n\nDéroulé : donne-moi une fonction rationnelle ou irrationnelle, et fais-moi calculer toutes les limites aux bornes de son domaine, puis nommer les asymptotes. Insiste sur le signe du dénominateur. Huit fonctions.",
+    },
+    ChapterPrompt {
+        course: Course::Mtc,
+        anchor: "m-continuite",
+        title: "Continuité",
+        level: Level::Acquis,
+        evidence: "Chapitre court du cours, aucun exercice dédié dans les TD — il sert à justifier, pas à calculer",
+        body: "Chapitre : continuité en un point et sur un intervalle, caractérisation séquentielle, opérations, continuité de la réciproque.\n\nAvertissement de calibrage : aucun exercice des trois feuilles de TD ne porte spécifiquement sur la continuité. Ce chapitre sert à justifier en une ligne, dans une étude de fonction, que la fonction se comporte bien. Ne me fais donc pas passer une heure dessus.\n\nCe que je dois savoir, en vingt minutes :\n1. La définition, et le fait que continue sur A signifie continue en tout point de A.\n2. La caractérisation séquentielle : continue en x₀ ⟺ pour toute suite uₙ → x₀, f(uₙ) → f(x₀). Utile surtout pour réfuter la continuité avec une seule suite.\n3. Ce qui conserve la continuité : somme, produit, composée, et 1/f si f ne s'annule pas.\n4. Le catalogue : polynômes, exp, ln, sin, cos, valeur absolue, et 1/xⁿ sur chacun des deux intervalles.\n5. La réciproque d'une bijection continue strictement monotone est continue.\n\nDéroulé : cinq questions de type vrai-faux justifié, puis demande-moi de rédiger la phrase exacte que j'écrirai dans une copie pour justifier la continuité d'une fonction donnée. Puis on s'arrête.",
+    },
+    ChapterPrompt {
+        course: Course::Mtc,
+        anchor: "m-usuelles",
+        title: "Les fonctions usuelles",
+        level: Level::Central,
+        evidence: "TD 3 ex. 8-19 : identités trigonométriques, équations avec ln et exp, cinq modèles exponentiels appliqués",
+        body: "Chapitre : affines, logarithme népérien et en base b, exponentielle, exponentielles de base α, puissances, trigonométrie, croissances comparées.\n\nCe que je dois savoir faire :\n1. Les propriétés algébriques de ln et exp, dans les deux sens, sans hésiter.\n2. Simplifier des expressions comme e^(3+ln 8), 3ln(2x)/ln(e^(−x)), ln(e^(3x−2)/4x²).\n3. Résoudre équations et inéquations avec ln et exp, en vérifiant le domaine, et en sachant qu'une exponentielle ne s'annule jamais.\n4. Les croissances comparées : exp l'emporte sur toute puissance, toute puissance l'emporte sur ln. Les quatre limites à réciter.\n5. Les valeurs de sin et cos en 0, π/6, π/4, π/3, π/2, π, et les identités sin² + cos² = 1, 1 + tan² = 1/cos².\n6. Résoudre sin x = a ou cos x = a sur un intervalle donné, en donnant TOUTES les solutions de l'intervalle.\n7. Traiter un modèle appliqué : décibels, pH, croissance bactérienne N(t) = N₀e^(βt), élimination d'un médicament. Toujours le même geste : isoler l'exponentielle, passer au logarithme.\n\nCalibrage : tan est π-périodique, pas 2π — c'est l'erreur classique. Les modèles appliqués donnent deux mesures et demandent d'en déduire les paramètres.\n\nDéroulé : trois blocs successifs — simplifications, équations, modèle appliqué. Quatre questions par bloc, une à la fois.",
+    },
+    ChapterPrompt {
+        course: Course::Mtc,
+        anchor: "m-derivees",
+        title: "Dérivabilité et variations",
+        level: Level::Central,
+        evidence: "TD 3 ex. 20 (quinze dérivées) et ex. 23-33 (onze études complètes) — près de la moitié de la feuille",
+        body: "Chapitre : taux d'accroissement, nombre dérivé, tangente, règles de dérivation, dérivée et sens de variation, tableau de variations.\n\nCe que je dois savoir faire :\n1. Calculer une dérivée avec les règles : produit, quotient, composée, et les formes en u′ (e^u, ln|u|, √u, u^α, sin u, cos u).\n2. Préciser le domaine de dérivabilité, qui n'est pas toujours le domaine de définition — √ est définie en 0 mais n'y est pas dérivable.\n3. Donner l'équation de la tangente : y = f′(a)(x − a) + f(a).\n4. Factoriser f′ pour en lire le signe, et dresser le tableau de variations.\n5. Savoir que f croissante ⟺ f′ ≥ 0, mais que f strictement croissante n'équivaut PAS à f′ > 0 partout : x³ le montre.\n6. Mener une étude complète en six points : domaine, limites aux bornes, asymptotes, dérivée factorisée, tableau, allure.\n\nCalibrage : c'est le cœur du cours. Les fonctions à étudier sont du type (x+1)/(x−2), xe^(−x), ln x − x, (2x²−3x)/(x−2), √(x²+2x−3), x^x, 3x⁴−4x³−12x²+5, et des modèles appliqués (bénéfice à maximiser, temps d'exécution à minimiser, débit réseau).\n\nDéroulé : d'abord cinq dérivées sèches avec domaine de dérivabilité, une à la fois. Puis deux études complètes en suivant les six points, où tu ne valides une étape que si elle est écrite. Refuse un tableau de variations sans le signe de f′ justifié.",
+    },
+    ChapterPrompt {
+        course: Course::Mtc,
+        anchor: "m-primitives",
+        title: "Primitives et intégrales",
+        level: Level::Central,
+        evidence: "TD 3 ex. 21-22 : douze primitives et quinze intégrales, les trois techniques du programme",
+        body: "Chapitre : primitives usuelles, intégration par parties, changement de variable, fractions rationnelles.\n\nCe que je dois savoir faire :\n1. Reconnaître en trois secondes laquelle des trois techniques s'applique : je vois u′ à côté de u ⇒ changement de variable ; je vois un polynôme multiplié par e^x, sin, cos ou ln ⇒ intégration par parties ; je vois un quotient de polynômes ⇒ éléments simples.\n2. Les primitives usuelles, y compris ∫tan x dx = −ln|cos x| et ∫dx/(1+x²) = arctan x.\n3. L'intégration par parties, en choisissant comme v le facteur qui se simplifie en dérivant. Savoir la faire deux fois de suite pour ∫e^x sin x dx.\n4. Le changement de variable, écrit proprement avec U et dU.\n5. Décomposer une fraction rationnelle en éléments simples, et traiter le cas d'un trinôme sans racine réelle par la forme canonique puis arctan.\n6. Évaluer une intégrale définie entre deux bornes sans se tromper de signe.\n\nCalibrage : les trois briques des fractions rationnelles sont c/(x−λ), c/(x−λ)ⁿ et 1/(x²+2αx+β) avec discriminant négatif. Le changement t = tan(x/2) pour les fractions trigonométriques est au programme mais n'apparaît qu'une fois dans le cours : à garder pour la fin.\n\nDéroulé : donne-moi une intégrale, et fais-moi d'abord annoncer la technique avant tout calcul. Corrige le choix de technique en priorité. Douze intégrales, de la plus directe à la fraction rationnelle.",
+    },
+];
+
+// ═══════════════════════════════════════════════════ Algorithmique 1
+
+const ALGO: &[ChapterPrompt] = &[
+    ChapterPrompt {
+        course: Course::Algo,
+        anchor: "al-def",
+        title: "Qu'est-ce qu'un algorithme ?",
+        level: Level::Acquis,
+        evidence: "CM 1 · évalué par QCM (deux QCM dans le semestre, semaines 43 et 50)",
+        body: "Chapitre : définition d'un algorithme, entrées, sorties, instance, correction.\n\nCe que je dois savoir :\n1. La définition informelle du cours : une suite finie et non ambiguë d'instructions qui, à partir de données en entrée, produit un résultat en un nombre fini d'étapes.\n2. Ce qu'est une instance d'un problème, et la différence entre le problème et l'instance.\n3. Ce que signifie « un algorithme est correct » : il produit le bon résultat pour TOUTE instance, pas seulement celles qu'on a testées.\n4. Identifier les entrées d'un problème : quelles informations, et sous quelle forme.\n\nCalibrage : ce chapitre est évalué au QCM, pas en rédaction. Ce qui compte est la précision du vocabulaire, pas la profondeur. Pas de complexité asymptotique ici : ce n'est pas au programme de ce cours d'introduction.\n\nDéroulé : pose-moi dix questions à choix multiple avec des distracteurs plausibles — le genre de question où trois réponses sonnent juste. Après chaque réponse, explique pourquoi les autres options sont fausses, pas seulement pourquoi la bonne est bonne.",
+    },
+    ChapterPrompt {
+        course: Course::Algo,
+        anchor: "al-cycle",
+        title: "Le cycle de développement",
+        level: Level::Acquis,
+        evidence: "CM 1 · matière à QCM, avec l'exemple filé du plus court chemin dans un réseau de métro",
+        body: "Chapitre : analyse, conception, codage, compilation et exécution.\n\nCe que je dois savoir :\n1. Les quatre phases, dans l'ordre, et ce qui se décide dans chacune.\n2. Ce que contient la phase d'analyse : identifier le problème précisément (« plus court chemin » : en temps ou en distance ?), les données, les résultats attendus, les cas particuliers, et le découpage du traitement en tâches simples.\n3. La différence entre un algorithme et un programme : le premier est indépendant du langage, le second en dépend.\n4. Ce que fait un compilateur, et pourquoi une erreur de compilation n'est pas une erreur d'algorithme.\n\nCalibrage : l'exemple du cours est le plus court chemin dans un réseau de transport. Les questions d'examen portent sur le vocabulaire et sur la capacité à classer une décision dans la bonne phase.\n\nDéroulé : donne-moi cinq situations concrètes (« on hésite entre deux structures de données », « le programme affiche une erreur de syntaxe », « on se demande si deux stations peuvent ne pas être reliées ») et demande-moi dans quelle phase elles se placent. Puis fais-moi mener l'analyse complète d'un petit problème de mon choix.",
+    },
+    ChapterPrompt {
+        course: Course::Algo,
+        anchor: "al-langages",
+        title: "Un exemple, quatre langages",
+        level: Level::Marginal,
+        evidence: "CM 1 · illustration, non évaluée en tant que telle",
+        body: "Chapitre : le même algorithme écrit en pseudo-code et dans plusieurs langages.\n\nAvertissement de calibrage : c'est une illustration du cours, pas une compétence évaluée. Personne ne me demandera d'écrire du code dans un langage précis à l'examen d'Algorithmique 1 — les TP servent à ça, l'épreuve écrite porte sur le pseudo-code.\n\nCe que je veux en tirer, en quinze minutes :\n1. Voir que la structure de l'algorithme est la même partout, et que seule la syntaxe change.\n2. Repérer ce qui appartient à l'algorithme (les étapes, les conditions, les boucles) et ce qui appartient au langage (les points-virgules, les déclarations, les accolades).\n3. Savoir lire un extrait dans un langage que je ne connais pas, en m'appuyant sur cette structure.\n\nDéroulé : montre-moi un algorithme simple en pseudo-code, puis la même chose dans deux langages, et demande-moi de pointer les correspondances ligne à ligne. Trois exemples suffisent. Ne me fais pas apprendre de syntaxe par cœur.",
+    },
+    ChapterPrompt {
+        course: Course::Algo,
+        anchor: "al-machine",
+        title: "Algorithmes et machine",
+        level: Level::Acquis,
+        evidence: "CM 1 · le modèle RAM, matière à QCM",
+        body: "Chapitre : le modèle RAM, mémoire, instructions élémentaires.\n\nCe que je dois savoir :\n1. Ce que décrit le modèle RAM : une mémoire de cases adressables, des opérations élémentaires à coût unitaire.\n2. Pourquoi on a besoin d'un modèle de machine pour parler d'algorithmes indépendamment du matériel.\n3. Ce qui compte comme une opération élémentaire.\n\nCalibrage : niveau introduction. Pas de calcul de complexité, pas de notation grand-O : ce n'est pas dans le CM 1.\n\nDéroulé : six questions courtes, format QCM. Puis demande-moi d'expliquer le modèle RAM en trois phrases, comme si je répondais à une question de cours, et corrige la formulation.",
+    },
+    ChapterPrompt {
+        course: Course::Algo,
+        anchor: "al-syntaxe",
+        title: "Types, variables et traces",
+        level: Level::Central,
+        evidence: "TD série 1, ex. 1-15 : c'est tout le TD, et donc l'essentiel de ce qui est évalué au partiel d'une heure",
+        body: "Chapitre : types, déclaration, affectation, expressions, traces d'exécution.\n\nCe que je dois savoir faire, et c'est là que tout se joue :\n1. Dire si une instruction est correcte, et pourquoi elle ne l'est pas quand elle ne l'est pas : type incompatible, variable non déclarée, affectation dans le mauvais sens.\n2. Donner le type d'une valeur ou d'une expression, y compris les expressions mixtes entier/réel/booléen/caractère.\n3. Dérouler une trace d'exécution dans un tableau : une colonne par variable, une ligne par instruction. Sans sauter d'étape.\n4. Traduire une expression algorithmique en expression mathématique, et l'inverse.\n5. Échanger le contenu de deux variables, avec puis sans variable temporaire.\n6. Écrire un algorithme complet et court, avec déclaration des variables, lecture, traitement, écriture.\n\nCalibrage : le partiel dure une heure, l'examen aussi. Les exercices sont courts et mécaniques ; l'erreur qui coûte le plus est le typage d'une division entière et l'ordre des affectations dans un échange.\n\nDéroulé : commence par cinq questions de typage, puis trois traces d'exécution complètes que je dois dérouler ligne à ligne dans un tableau, puis deux algorithmes à écrire. Pour les traces, refuse toute réponse qui ne montre pas l'état de chaque variable à chaque étape.",
+    },
+];
+
+// ═══════════════════════════════ Représentation de l'information
+
+const INFO: &[ChapterPrompt] = &[
+    ChapterPrompt {
+        course: Course::Info,
+        anchor: "i-sens",
+        title: "Du sens à la donnée",
+        level: Level::Acquis,
+        evidence: "CM 1 · définitions, matière à questions de cours",
+        body: "Chapitre : information, donnée, rôle de l'ordinateur.\n\nCe que je dois savoir :\n1. La définition de l'information : une connaissance qui fait sens pour les personnes concernées et qui peut être représentée par des symboles.\n2. La définition de la donnée : une représentation d'information, qui dans un ordinateur est toujours une succession de 0 et de 1.\n3. Pourquoi le sens n'est pas pertinent pour une machine : elle transforme des représentations, pas des significations.\n\nCalibrage : trois définitions, à restituer exactement. C'est court, c'est du par cœur, et ça rapporte.\n\nDéroulé : interroge-moi en cartes de révision — tu donnes le terme, je donne la définition, tu compares mot à mot avec celle du cours et tu signales ce qui manque. Fais trois tours jusqu'à ce que je les donne sans hésiter.",
+    },
+    ChapterPrompt {
+        course: Course::Info,
+        anchor: "i-binaire",
+        title: "La représentation binaire",
+        level: Level::Acquis,
+        evidence: "CM 1 · bit, octet, électronique numérique",
+        body: "Chapitre : bit, octet, principe du tout ou rien.\n\nCe que je dois savoir :\n1. Bit = binary digit, chiffre binaire, deux valeurs possibles.\n2. Octet = mot de 8 bits. Ne pas confondre avec le byte dans les contextes où il ne vaut pas 8 bits.\n3. Le principe « tout ou rien » et l'électronique numérique, par opposition à l'analogique.\n4. Pourquoi il faut combiner de nombreux bits pour représenter quoi que ce soit d'utile.\n\nCalibrage : vocabulaire et ordres de grandeur. Pas d'électronique, pas de portes logiques : ce n'est pas dans le CM 1.\n\nDéroulé : huit questions courtes mêlant définitions et petits calculs (combien de valeurs sur n bits, combien de bits pour coder k valeurs). Une à la fois.",
+    },
+    ChapterPrompt {
+        course: Course::Info,
+        anchor: "i-numeration",
+        title: "Les systèmes de numération",
+        level: Level::Central,
+        evidence: "CM 1 et TD série 1 · la base de tout le reste du cours",
+        body: "Chapitre : base, alphabet, poids des chiffres, décimal, binaire, octal, hexadécimal.\n\nCe que je dois savoir faire :\n1. Définir un système de numération : une base B et un ensemble ordonné de B chiffres.\n2. Écrire un nombre dans une base quelconque sous forme polynomiale, avec les poids en puissances de la base.\n3. Reconnaître MSB et LSB, poids fort et poids faible.\n4. Connaître les quatre alphabets usuels, dont l'hexadécimal 0-9 puis A-F.\n5. Dire immédiatement si une écriture est valide dans une base donnée : le chiffre 8 n'existe pas en base 8.\n6. Évaluer un nombre par son polynôme, par exemple (A7C5)₁₆.\n\nCalibrage : c'est mécanique et ça tombe forcément, sous une forme ou une autre. Les nombres restent de taille raisonnable et se traitent à la main.\n\nDéroulé : dix questions, en alternant validité d'une écriture, calcul polynomial, et identification de poids. Une à la fois, et exige que j'écrive le développement en puissances avant le résultat.",
+    },
+    ChapterPrompt {
+        course: Course::Info,
+        anchor: "i-conversion",
+        title: "Conversion entre bases",
+        level: Level::Central,
+        evidence: "CM 1 et TD série 1 · quatre méthodes, exercice systématique",
+        body: "Chapitre : les quatre méthodes de conversion.\n\nCe que je dois savoir faire :\n1. Le calcul par le polynôme, pour aller d'une base quelconque vers le décimal.\n2. Les divisions successives, pour aller du décimal vers une base quelconque — en lisant les restes DE BAS EN HAUT, du dernier au premier.\n3. Les soustractions successives, en retranchant les plus grandes puissances de la base.\n4. Le cas particulier B = B′ⁿ : binaire vers octal par paquets de 3 bits, binaire vers hexadécimal par paquets de 4, en groupant à partir de la droite.\n\nCalibrage : c'est l'exercice le plus prévisible du cours. La seule chose qui se perd, c'est le sens de lecture des restes et le sens de groupement des paquets — toujours depuis le poids faible.\n\nDéroulé : dix conversions, en variant les méthodes, une à la fois. Avant chaque calcul, je dois dire quelle méthode est la plus rapide pour ce cas précis. Corrige ce choix même si mon résultat est bon : passer par le décimal quand on peut grouper par paquets de 4, c'est du temps perdu à l'épreuve.",
+    },
+    ChapterPrompt {
+        course: Course::Info,
+        anchor: "i-fractionnaire",
+        title: "Nombres fractionnaires",
+        level: Level::Exigeant,
+        evidence: "CM 1 · complément, plus technique que le reste du chapitre",
+        body: "Chapitre : conversion de la partie fractionnaire par multiplications successives.\n\nCe que je dois savoir faire :\n1. Convertir une partie fractionnaire décimale vers une autre base : multiplier par la base, garder la partie entière, recommencer avec la partie fractionnaire restante. Lire les chiffres DE HAUT EN BAS, dans l'ordre de production — c'est l'inverse des divisions successives, et c'est le piège.\n2. Reconnaître les cas où le développement ne s'arrête pas, et savoir s'arrêter à un nombre de chiffres donné.\n3. Faire la conversion inverse par le polynôme, avec des puissances négatives de la base.\n\nCalibrage : c'est présenté comme un complément, mais c'est mécanique une fois le sens de lecture assimilé. Une dizaine de répétitions suffisent.\n\nDéroulé : six conversions dans chaque sens, une à la fois. Exige le tableau complet des multiplications, pas seulement le résultat. Vérifie que je ne lis pas les chiffres à l'envers.",
+    },
+    ChapterPrompt {
+        course: Course::Info,
+        anchor: "i-entiers",
+        title: "Les entiers non signés",
+        level: Level::Central,
+        evidence: "CM 1 · capacité de représentation et arithmétique binaire",
+        body: "Chapitre : capacité de représentation, opérations arithmétiques, dépassement.\n\nCe que je dois savoir faire :\n1. Donner la plus grande valeur représentable sur n bits : 2ⁿ − 1. Et le nombre de valeurs : 2ⁿ.\n2. Dire combien de bits sont nécessaires pour représenter une valeur donnée.\n3. Poser une addition binaire avec les retenues, et une soustraction.\n4. Repérer un dépassement de capacité et dire ce qu'il produit.\n\nCalibrage : les calculs se font sur un ou deux octets. Ce chapitre s'arrête aux entiers NON signés : le complément à deux n'est pas encore au programme du CM 1.\n\nDéroulé : huit exercices, en alternant capacité, nombre de bits nécessaires, addition posée, et détection de dépassement. Une à la fois. Pour les additions, exige la ligne des retenues.",
+    },
+];
+
+// ═══════════════════════════════════════════ Systèmes d'exploitation
+
+const OS: &[ChapterPrompt] = &[
+    ChapterPrompt {
+        course: Course::Os,
+        anchor: "o-os",
+        title: "Le système d'exploitation",
+        level: Level::Acquis,
+        evidence: "Notes de cours · définitions et rôle",
+        body: "Chapitre : ce qu'est un système d'exploitation et à quoi il sert.\n\nCe que je dois savoir :\n1. Le rôle du système : intermédiaire entre le matériel et les programmes, gestion des ressources.\n2. Ce qui distingue le noyau des programmes utilisateur.\n3. Pourquoi la ligne de commande existe encore, et ce qu'elle permet que l'interface graphique ne permet pas.\n\nCalibrage : quelques définitions, à restituer. Pas d'architecture système, pas d'ordonnancement.\n\nDéroulé : cinq questions de cours, puis demande-moi d'expliquer en trois phrases ce que fait un système d'exploitation. Corrige la formulation, pas seulement le fond.",
+    },
+    ChapterPrompt {
+        course: Course::Os,
+        anchor: "o-arbo",
+        title: "L'arborescence",
+        level: Level::Acquis,
+        evidence: "Notes de cours · la racine, le point, le double point — prérequis de tout le reste",
+        body: "Chapitre : arborescence de fichiers, racine, chemins absolus et relatifs.\n\nCe que je dois savoir faire :\n1. Lire un chemin et dire s'il est absolu (commence par /) ou relatif.\n2. Interpréter . (répertoire courant), .. (répertoire père), ~ (répertoire personnel), / (racine).\n3. Traduire un chemin absolu en chemin relatif depuis un répertoire donné, et l'inverse.\n4. Dessiner l'arborescence correspondant à une suite de commandes.\n\nCalibrage : c'est le prérequis de tous les autres chapitres. Une erreur de chemin invalide toute la suite d'un exercice.\n\nDéroulé : donne-moi une arborescence dessinée en texte et une position courante, puis pose-moi dix questions de navigation : « quel est le chemin relatif de X depuis Y ? », « où suis-je après cd ../../z ? ». Une à la fois.",
+    },
+    ChapterPrompt {
+        course: Course::Os,
+        anchor: "o-deplacer",
+        title: "Se repérer et se déplacer",
+        level: Level::Central,
+        evidence: "Notes de cours · pwd, ls et ses options, cd, file",
+        body: "Chapitre : pwd, ls, cd, file.\n\nCe que je dois savoir faire :\n1. pwd : afficher l'emplacement courant.\n2. ls, et surtout ses options : -l pour le détail (la première lettre d indique un dossier, - un fichier), -a pour les fichiers cachés dont le nom commence par un point.\n3. cd avec un chemin absolu, relatif, .., et sans argument.\n4. file pour déterminer le type d'un fichier, et pourquoi l'extension ne suffit pas sous Unix.\n5. Lire une sortie de ls -l : permissions, propriétaire, taille, date.\n\nCalibrage : ces commandes tombent sous forme « que fait cette commande ? » ou « quelle commande pour obtenir ceci ? ». Savoir les options est ce qui distingue une réponse complète.\n\nDéroulé : alterne deux formats — je te donne une commande, tu me demandes ce qu'elle fait ; tu me donnes un besoin, je donne la commande. Douze questions. Insiste sur les options.",
+    },
+    ChapterPrompt {
+        course: Course::Os,
+        anchor: "o-creer",
+        title: "Créer fichiers et répertoires",
+        level: Level::Central,
+        evidence: "Notes de cours · mkdir, touch, nano, et les redirections",
+        body: "Chapitre : mkdir, touch, nano, redirections.\n\nCe que je dois savoir faire :\n1. mkdir pour un répertoire, touch pour un fichier vide, nano pour éditer.\n2. La redirection > : écrit la sortie dans le fichier, EN ÉCRASANT le contenu précédent.\n3. La redirection >> : ajoute à la fin, sans rien effacer.\n4. Prévoir le contenu d'un fichier après une suite de redirections.\n\nCalibrage : la distinction > et >> est exactement le genre de détail qui fait la différence entre deux copies. Elle tombe presque à coup sûr.\n\nDéroulé : donne-moi des suites de trois à cinq commandes avec redirections, et demande-moi le contenu final de chaque fichier. Six suites, de plus en plus longues. Puis l'inverse : je donne le contenu voulu, tu me demandes les commandes.",
+    },
+    ChapterPrompt {
+        course: Course::Os,
+        anchor: "o-lire",
+        title: "Lire un fichier",
+        level: Level::Central,
+        evidence: "Notes de cours · cat, less, head, tail, wc",
+        body: "Chapitre : cat, less, head, tail, wc.\n\nCe que je dois savoir faire :\n1. cat pour tout afficher d'un bloc, less pour page par page.\n2. head et tail pour le début et la fin, avec l'option -n N pour choisir le nombre de lignes.\n3. wc pour compter lignes, mots et caractères, et savoir dans quel ordre les trois nombres s'affichent.\n4. Choisir la bonne commande selon la taille du fichier et ce que l'on cherche.\n\nCalibrage : simple, mais l'ordre des colonnes de wc et la valeur par défaut de head et tail (10 lignes) sont deux détails qui se demandent.\n\nDéroulé : dix questions courtes, en mêlant « quelle commande » et « quelle sortie ». Une à la fois. Donne-moi aussi deux cas où plusieurs commandes conviennent, et demande-moi laquelle est la plus adaptée et pourquoi.",
+    },
+    ChapterPrompt {
+        course: Course::Os,
+        anchor: "o-gerer",
+        title: "Copier, déplacer, supprimer",
+        level: Level::Central,
+        evidence: "Notes de cours · cp, mv, rm, rmdir — et l'absence de corbeille",
+        body: "Chapitre : cp, mv, rm, rmdir.\n\nCe que je dois savoir faire :\n1. cp source destination, et l'ordre des arguments.\n2. mv, qui sert à la fois à renommer et à déplacer — savoir dire lequel des deux selon les arguments.\n3. rm pour un fichier, rmdir pour un répertoire vide, et ce qu'il faut pour un répertoire non vide.\n4. Comprendre qu'il n'y a pas de corbeille : une suppression est définitive.\n\nCalibrage : l'ordre des arguments et la distinction rm / rmdir sont les deux points testés.\n\nDéroulé : donne-moi des situations concrètes (« renommer rapport.txt en rapport-final.txt », « déplacer tous les .txt dans archives/ », « supprimer un dossier qui contient des fichiers ») et fais-moi écrire la commande. Dix situations. Signale-moi toute commande dangereuse que j'écrirais sans précaution.",
+    },
+    ChapterPrompt {
+        course: Course::Os,
+        anchor: "o-aide",
+        title: "Obtenir de l'aide",
+        level: Level::Acquis,
+        evidence: "Notes de cours · man, --help",
+        body: "Chapitre : man, --help.\n\nCe que je dois savoir faire :\n1. man commande, et comment y naviguer et en sortir.\n2. commande --help pour un résumé rapide.\n3. Lire une page de manuel : la ligne SYNOPSIS, les crochets pour l'optionnel, la liste des options.\n\nCalibrage : court. Ce qui est demandé est de savoir lire un SYNOPSIS et d'en déduire une commande correcte.\n\nDéroulé : donne-moi trois extraits de SYNOPSIS de commandes que je ne connais pas, et demande-moi d'en déduire une invocation valide pour un besoin donné. Puis cinq questions courtes sur man lui-même.",
+    },
+    ChapterPrompt {
+        course: Course::Os,
+        anchor: "o-composer",
+        title: "Composer des commandes",
+        level: Level::Exigeant,
+        evidence: "Notes de cours · le tube, l'enchaînement — le chapitre qui sépare les copies",
+        body: "Chapitre : le tube |, la composition de commandes.\n\nCe que je dois savoir faire :\n1. Le tube : la sortie de la commande de gauche devient l'entrée de celle de droite.\n2. Distinguer le tube | de la redirection > : l'un branche deux commandes, l'autre écrit dans un fichier.\n3. Construire une chaîne de deux ou trois commandes pour répondre à un besoin : compter les fichiers d'un répertoire, afficher les cinq dernières lignes d'une liste triée, etc.\n4. Lire une chaîne existante et dire ce qu'elle produit, étape par étape.\n\nCalibrage : c'est le chapitre le plus discriminant de la matière, parce qu'il combine tous les autres. Rien d'avancé n'est attendu — pas de scripts, pas de boucles — mais il faut être fluide sur les commandes des chapitres 3 à 6.\n\nDéroulé : commence par cinq chaînes à lire et à expliquer étape par étape. Puis cinq besoins à traduire en chaîne. Pour chacune, demande-moi ce que produit chaque maillon avant de passer au suivant. Ne me donne pas la solution : donne un indice sur le maillon manquant.",
+    },
+];

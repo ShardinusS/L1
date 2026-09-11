@@ -1,0 +1,14 @@
+{
+  "name": "Classeur d'informatique — L1",
+  "short_name": "Classeur",
+  "description": "Quatre matieres de L1 : structures fondamentales, algorithmique, representation de l'information, systemes d'exploitation.",
+  "lang": "fr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F5F6F9",
+  "theme_color": "#F5F6F9",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

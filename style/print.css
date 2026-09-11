@@ -1,0 +1,45 @@
+/* ================= impression ================= */
+@media print{
+  /* Une fiche imprimée se lit en noir sur blanc, quel que soit le thème écran. */
+  :root,:root[data-theme="dark"]{
+    --paper:#fff; --surface:#fff; --surface-2:#f4f4f4;
+    --ink:#000; --ink-soft:#444; --rule:#bbb; --rule-strong:#888;
+    --violet:#000; --violet-ink:#000; --violet-soft:#f0f0f0;
+    --ochre:#000;  --ochre-ink:#000;  --ochre-soft:#f0f0f0;
+    --blue:#000;   --blue-ink:#000;   --blue-soft:#f0f0f0;
+    --teal:#000;   --teal-ink:#000;   --teal-soft:#f0f0f0;
+    --red:#000;    --red-soft:#f0f0f0;
+    --shadow:none; --grid:transparent;
+    --term-bg:#fff; --term-fg:#000; --term-dim:#555;
+    --term-prompt:#000; --term-out:#000; --term-warn:#000;
+  }
+  @page{margin:18mm 16mm}
+  body{background:#fff;font-size:11pt;line-height:1.45}
+
+  /* Navigation, recherche et outils interactifs ne s'impriment pas. */
+  .topbar,nav.toc,.gsearch,.search,.conv,.theme-btn{display:none!important}
+
+  .shell{display:block;padding:0;max-width:none}
+  main{padding:0}
+  .masthead-inner,.hero-inner{padding:0 0 12pt}
+  .masthead,.hero{border-bottom:1px solid #000}
+  .masthead h1,.hero h1{font-size:22pt}
+  section+section{margin-top:18pt}
+  section{scroll-margin-top:0}
+
+  /* Rien ne doit être coupé en deux entre deux pages. */
+  .note,.ex,.an,.exo,.cmd,.term,.tree,.f,.base-card,.mat-card,.kpi,blockquote,
+  table,figure{break-inside:avoid;page-break-inside:avoid}
+  h2,h3,h4{break-after:avoid;page-break-after:avoid}
+  .sec-head{border-bottom-width:1px}
+
+  /* Les blocs à défilement horizontal sont dépliés. */
+  .tw,.ex-body,.term pre,.tree,.f,.strip{overflow:visible!important}
+  .term pre,.tree pre{white-space:pre-wrap;word-break:break-word}
+  .term{border:1px solid #888}
+  .term-bar .dot{display:none}
+
+  /* Les liens externes gardent leur adresse. */
+  a[href^="http"]::after{content:" (" attr(href) ")";font-size:9pt;color:#444}
+  .flash{animation:none}
+}

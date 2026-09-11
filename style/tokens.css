@@ -1,0 +1,62 @@
+/* ================= tokens ================= */
+:root{
+  --paper:#F5F6F9;
+  --surface:#FFFFFF;
+  --surface-2:#EDF0F6;
+  --ink:#161E33;
+  --ink-soft:#5A6481;
+  --rule:#DCE0EA;
+  --rule-strong:#C2C9D8;
+  --violet:#5B3E9E;  --violet-ink:#5B3E9E;  --violet-soft:#EBE6F8;
+  --ochre:#8A5A12;   --ochre-ink:#8A5A12;   --ochre-soft:#F6ECDC;
+  --blue:#26469F;    --blue-ink:#26469F;    --blue-soft:#E7ECFA;
+  --teal:#0E6B60;    --teal-ink:#0E6B60;    --teal-soft:#E0EFEC;
+  --rose:#9C3A72;    --rose-ink:#9C3A72;    --rose-soft:#F7E7F0;
+  --red:#B33128;     --red-soft:#FAEAE7;
+  --shadow:0 1px 2px rgba(22,30,51,.06), 0 8px 24px -16px rgba(22,30,51,.28);
+  --grid:rgba(38,70,159,.09);
+  --term-bg:#121A1D; --term-fg:#D5E2DE; --term-dim:#7B8C87;
+  --term-prompt:#5FCBA4; --term-out:#A9BDB8; --term-warn:#E8897C;
+  --accent:var(--ink); --accent-ink:var(--ink); --accent-soft:var(--surface-2);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#111621;
+    --surface:#171E2C;
+    --surface-2:#1D2536;
+    --ink:#E3E8F3;
+    --ink-soft:#98A2BA;
+    --rule:#2A3348;
+    --rule-strong:#3A4560;
+    --violet:#AF9AF0; --violet-ink:#BEACF5; --violet-soft:#241E3D;
+    --ochre:#D9A54A;  --ochre-ink:#E3B466;  --ochre-soft:#332715;
+    --blue:#8FA9F3;   --blue-ink:#A8BCF7;   --blue-soft:#1B2540;
+    --teal:#4EBFAF;   --teal-ink:#63CDBC;   --teal-soft:#14322F;
+    --rose:#E79BC6;   --rose-ink:#EDACD1;   --rose-soft:#331F2C;
+    --red:#E89184;    --red-soft:#33211F;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+    --grid:rgba(143,169,243,.12);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#111621;
+  --surface:#171E2C;
+  --surface-2:#1D2536;
+  --ink:#E3E8F3;
+  --ink-soft:#98A2BA;
+  --rule:#2A3348;
+  --rule-strong:#3A4560;
+  --violet:#AF9AF0; --violet-ink:#BEACF5; --violet-soft:#241E3D;
+  --ochre:#D9A54A;  --ochre-ink:#E3B466;  --ochre-soft:#332715;
+  --blue:#8FA9F3;   --blue-ink:#A8BCF7;   --blue-soft:#1B2540;
+  --teal:#4EBFAF;   --teal-ink:#63CDBC;   --teal-soft:#14322F;
+  --rose:#E79BC6;   --rose-ink:#EDACD1;   --rose-soft:#331F2C;
+  --red:#E89184;    --red-soft:#33211F;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.8);
+  --grid:rgba(143,169,243,.12);
+}
+.c-sf{--accent:var(--violet);--accent-ink:var(--violet-ink);--accent-soft:var(--violet-soft)}
+.c-algo{--accent:var(--ochre);--accent-ink:var(--ochre-ink);--accent-soft:var(--ochre-soft)}
+.c-info{--accent:var(--blue);--accent-ink:var(--blue-ink);--accent-soft:var(--blue-soft)}
+.c-os{--accent:var(--teal);--accent-ink:var(--teal-ink);--accent-soft:var(--teal-soft)}
+.c-mtc{--accent:var(--rose);--accent-ink:var(--rose-ink);--accent-soft:var(--rose-soft)}
